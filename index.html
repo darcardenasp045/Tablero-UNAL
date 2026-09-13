@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tablero de Control - Levantamiento de Cargas Laborales UNAL</title>
+  <title>Tablero de Control - Estudio de Cargas Laborales UNAL</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- PapaParse para Google Sheets -->
+  <!-- PapaParse para procesar enlaces CSV de Google Sheets en tiempo real -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <!-- Chart.js -->
+  <!-- Chart.js para gráficos -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <style>
-    /* Estilos de Marca Institucional UNAL */
+    /* Identidad de Marca Institucional UNAL */
     .bg-unal { background-color: #006633; }
     .text-unal { color: #006633; }
     .border-unal { border-color: #006633; }
@@ -42,10 +42,10 @@
           </div>
         </div>
 
-        <!-- Botones de Acción -->
+        <!-- Botones de Acción para Vercel -->
         <div class="flex items-center gap-2 no-print">
-          <button onclick="cargarDatosGoogleSheets()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold py-2 px-3.5 rounded-lg border border-emerald-500 transition flex items-center gap-1.5 shadow-sm">
-            🔄 Actualizar Datos
+          <button onclick="cargarAmbasFuentes()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold py-2 px-3.5 rounded-lg border border-emerald-500 transition flex items-center gap-1.5 shadow-sm">
+            🔄 Sincronizar Fuentes
           </button>
           <button onclick="window.print()" class="bg-white text-unal hover:bg-gray-100 text-xs font-bold py-2 px-3.5 rounded-lg transition shadow-sm flex items-center gap-1.5">
             🖨️ Generar Informe / PDF
@@ -53,7 +53,7 @@
         </div>
       </div>
 
-      <!-- Barra de Filtro por Fecha de Corte -->
+      <!-- Barra de Estado y Filtro por Fecha de Corte -->
       <div class="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-gray-600">
         <div class="flex items-center gap-2">
           <span class="font-bold text-gray-700">📅 Fecha / Semana de Corte:</span>
@@ -62,47 +62,47 @@
           </select>
         </div>
         <div class="flex items-center gap-4 text-gray-500">
-          <span>Fuente: <strong class="text-gray-700">HOJA_SEGUIMIENTO_ANALISTAS</strong></span>
+          <span>Fuente Maestro: <strong class="text-gray-700">DEPENDENCIAS</strong></span>
           <span>•</span>
-          <span>Estado del Sistema: <strong class="text-emerald-600">En Línea</strong></span>
+          <span>Fuente Operativa: <strong class="text-gray-700">SEGUIMIENTO</strong></span>
         </div>
       </div>
     </header>
 
-    <!-- TARJETAS KPI (Inspiradas en el diseño institucional) -->
+    <!-- TARJETAS KPI -->
     <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
       <div class="bg-white p-4 rounded-xl border-t-4 border-unal shadow-sm">
-        <span class="text-xs font-semibold uppercase text-gray-400">Total Servidores Meta</span>
-        <div class="text-2xl font-black text-gray-900 mt-1">3,172</div>
-        <span class="text-[10px] text-gray-400">Universo institucional</span>
+        <span class="text-xs font-semibold uppercase text-gray-400">Total Unidades Org.</span>
+        <div id="kpiTotalUnidades" class="text-2xl font-black text-gray-900 mt-1">0</div>
+        <span class="text-[10px] text-gray-400">Del Maestro de Dependencias</span>
       </div>
       
       <div class="bg-white p-4 rounded-xl border-t-4 border-emerald-500 shadow-sm">
         <span class="text-xs font-semibold uppercase text-gray-400">Servidores Levantados</span>
         <div id="kpiLevantados" class="text-2xl font-black text-emerald-600 mt-1">0</div>
-        <span id="kpiLevantadosSub" class="text-[10px] text-gray-400">Avance acumulado</span>
+        <span class="text-[10px] text-gray-400">Avance de Servidores</span>
       </div>
 
       <div class="bg-white p-4 rounded-xl border-t-4 border-blue-600 shadow-sm">
-        <span class="text-xs font-semibold uppercase text-gray-400">% Avance Global</span>
+        <span class="text-xs font-semibold uppercase text-gray-400">% Avance Servidores</span>
         <div id="kpiPorcentaje" class="text-2xl font-black text-blue-600 mt-1">0.00%</div>
-        <span class="text-[10px] text-gray-400">Sobre la meta de 3.172</span>
+        <span class="text-[10px] text-gray-400">Meta global: 3,172</span>
       </div>
 
       <div class="bg-white p-4 rounded-xl border-t-4 border-purple-600 shadow-sm">
         <span class="text-xs font-semibold uppercase text-gray-400">Mesas Aperturadas</span>
         <div id="kpiMesasAperturadas" class="text-2xl font-black text-purple-600 mt-1">0</div>
-        <span class="text-[10px] text-gray-400">Mesas completadas</span>
+        <span class="text-[10px] text-gray-400">Mesas listas</span>
       </div>
 
       <div class="bg-white p-4 rounded-xl border-t-4 border-amber-500 shadow-sm">
         <span class="text-xs font-semibold uppercase text-gray-400">Unidades Levantadas</span>
         <div id="kpiUnidadesLev" class="text-2xl font-black text-amber-600 mt-1">0</div>
-        <span class="text-[10px] text-gray-400">Unidades 100% listas</span>
+        <span class="text-[10px] text-gray-400">Unidades 100% terminadas</span>
       </div>
     </section>
 
-    <!-- BARRA DE AVANCE GENERAL DEL PROYECTO -->
+    <!-- BARRA DE AVANCE GENERAL -->
     <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-2">
       <div class="flex justify-between text-xs font-bold text-gray-700">
         <span class="uppercase tracking-wider text-unal">Porcentaje Consolidado de Levantamiento de Cargas</span>
@@ -113,14 +113,14 @@
       </div>
     </div>
 
-    <!-- SECCIÓN DE GRÁFICOS -->
+    <!-- SECCIÓN DE GRÁFICOS INTERACTIVOS -->
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Gráfico 1: Mesas de Apertura -->
+      <!-- Gráfico 1: Cobertura de Mesas de Apertura por Sede -->
       <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
         <h3 class="font-bold text-gray-800 text-sm mb-4 flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-unal"></span> Estado de las Mesas de Apertura
+          <span class="w-2 h-2 rounded-full bg-unal"></span> Mesas Aperturadas por Sede (vs. Universo)
         </h3>
-        <canvas id="chartMesas" class="max-h-60"></canvas>
+        <canvas id="chartSedesMesas" class="max-h-60"></canvas>
       </div>
 
       <!-- Gráfico 2: Servidores Levantados por Sede -->
@@ -128,16 +128,15 @@
         <h3 class="font-bold text-gray-800 text-sm mb-4 flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-unal"></span> Servidores Levantados por Sede
         </h3>
-        <canvas id="chartSedes" class="max-h-60"></canvas>
+        <canvas id="chartSedesServidores" class="max-h-60"></canvas>
       </div>
     </section>
 
-    <!-- TABLA DE DETALLE POR DEPENDENCIA -->
+    <!-- TABLA UNIFICADA DE DEPENDENCIAS -->
     <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       <div class="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
-        <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wider">Avance Detallado por Unidad Organizacional</h3>
+        <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wider">Avance Consolidado por Unidad Organizacional</h3>
         
-        <!-- Filtros Rápidos -->
         <div class="flex flex-wrap gap-2 w-full md:w-auto no-print">
           <input type="text" id="filtroNombre" oninput="filtrarTabla()" placeholder="Buscar dependencia..." class="border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-green-700 focus:outline-none w-full md:w-48" />
           <select id="filtroSede" onchange="filtrarTabla()" class="border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-green-700 focus:outline-none">
@@ -152,7 +151,7 @@
             <tr>
               <th class="p-3">ID_UADMIN</th>
               <th class="p-3">Sede</th>
-              <th class="p-3">Dependencia / Unidad</th>
+              <th class="p-3">Nombre de la Dependencia</th>
               <th class="p-3 text-center">Estado Mesa</th>
               <th class="p-3 text-center">Total Serv.</th>
               <th class="p-3 text-center">Levantados</th>
@@ -165,55 +164,103 @@
           </thead>
           <tbody id="tablaCuerpo" class="divide-y divide-gray-100">
             <tr>
-              <td colspan="11" class="text-center p-6 text-gray-400 font-medium">Cargando datos del servidor...</td>
+              <td colspan="11" class="text-center p-6 text-gray-400 font-medium">Sincronizando fuentes con Google Sheets...</td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <!-- PIE DE PÁGINA INSTITUCIONAL -->
     <footer class="text-center text-xs text-gray-400 py-4 border-t border-gray-200">
-      Universidad Nacional de Colombia • Dirección Nacional de Personal Académico y Administrativo (DNPAA)[cite: 1, 2]
+      Universidad Nacional de Colombia • Dirección Nacional de Personal Académico y Administrativo (DNPAA)[cite: 1, 4]
     </footer>
 
   </div>
 
   <script>
     const META_SERVIDORES = 3172;
-    const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQYT9HUSG3fUIq3HmgJqRqlPvgSFlyEVdzAzxliMM0ihN4ceDJaruJz-Cs54cbERw/pub?gid=1558092341&single=true&output=csv';
+    
+    // URL Pestaña DEPENDENCIAS (Maestro)
+    const URL_MAESTRO_DEPENDENCIAS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTfZLZW0YYGXcClSIkOZfTF40T_HBmN_7aIW5A8_JGVBu9q4hEivXuJq3Q2OXOsl6udC0oQGQgTk5DE/pub?gid=52723933&single=true&output=csv';
+    
+    // URL Pestaña SEGUIMIENTO (Operativo)
+    const URL_SEGUIMIENTO_ANALISTAS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQYT9HUSG3fUIq3HmgJqRqlPvgSFlyEVdzAzxliMM0ihN4ceDJaruJz-Cs54cbERw/pub?gid=1558092341&single=true&output=csv';
 
-    let datosOriginales = [];
+    let datosMaestro = [];
+    let datosSeguimiento = [];
+    let datosUnificados = [];
     let datosFiltradosPorCorte = [];
-    let chartSedesObj = null;
-    let chartMesasObj = null;
+
+    let chartSedesMesasObj = null;
+    let chartSedesServidoresObj = null;
 
     window.addEventListener('DOMContentLoaded', () => {
-      cargarDatosGoogleSheets();
+      cargarAmbasFuentes();
     });
 
-    function cargarDatosGoogleSheets() {
-      Papa.parse(GOOGLE_SHEET_CSV_URL, {
+    function cargarAmbasFuentes() {
+      // Cargar Maestro de Dependencias
+      Papa.parse(URL_MAESTRO_DEPENDENCIAS, {
         download: true,
         header: true,
         dynamicTyping: true,
         skipEmptyLines: true,
-        complete: function(results) {
-          datosOriginales = results.data;
-          poblarSelectorCortes(datosOriginales);
-          poblarFiltroSedes(datosOriginales);
-          filtrarPorCorte();
-        },
-        error: function(err) {
-          console.error("Error al sincronizar datos:", err);
-          alert("Error de conexión al leer el reporte.");
+        complete: function(resMaestro) {
+          datosMaestro = resMaestro.data;
+
+          // Cargar Seguimiento Operativo
+          Papa.parse(URL_SEGUIMIENTO_ANALISTAS, {
+            download: true,
+            header: true,
+            dynamicTyping: true,
+            skipEmptyLines: true,
+            complete: function(resSeguimiento) {
+              datosSeguimiento = resSeguimiento.data;
+              hacerCrucedatos();
+            }
+          });
         }
       });
     }
 
-    // Configuración del Selector de Cortes (Fechas o Semanas)
-    function poblarSelectorCortes(datos) {
-      const fechas = [...new Set(datos.map(d => d.FECHA || d.Fecha).filter(Boolean))].sort();
+    // Cruce de información por la llave ID_UADMIN
+    function hacerCrucedatos() {
+      const mapaSeguimiento = {};
+      datosSeguimiento.forEach(row => {
+        const key = (row["ID_UADMIN"] || "").toString().trim();
+        if (key) mapaSeguimiento[key] = row;
+      });
+
+      datosUnificados = datosMaestro.map(dep => {
+        const key = (dep["ID_UADMIN"] || "").toString().trim();
+        const seg = mapaSeguimiento[key] || {};
+
+        return {
+          ID_UADMIN: key,
+          ID_SEDE: dep["ID_SEDE"] || dep["ID SEDE"] || "01 - NIVEL NACIONAL",
+          NOMBRE_DEPENDENCIA: dep["NOMBRE DE LA DEPENDENCIA"] || dep["DEPENDENCIA"] || "Sin Nombre",
+          ES_UNIDAD_ORGANIZACIONAL: (dep["ES UNIDAD ORGANIZACIONAL?"] || dep["ES UNIDAD ORGANIZACIONAL"] || "").toString().toUpperCase().trim(),
+          
+          // Campos operativos combinados
+          ESTADO_MESA: seg["ESTADO DE LAS MESAS DE APERTURA"] || dep["ESTADO DE LAS MESAS DE APERTURA"] || null,
+          TOTAL_SERVIDORES: seg["TOTAL SERVIDORES"] !== undefined ? seg["TOTAL SERVIDORES"] : null,
+          SERVIDORES_LEVANTADOS: seg["SERVIDORES CON CARGA LEVANTADA"] !== undefined ? seg["SERVIDORES CON CARGA LEVANTADA"] : null,
+          UNIDAD_LEVANTADA: seg["UNIDAD LEVANTADA"] || dep["UNIDAD LEVANTADA"] || null,
+          SOLICITUD_INFO: seg["SOLICITUD DE INFORMACIÓN / VOLÚMENES DE TRABAJO"] || seg["SOLICITUD_INFO"] || null,
+          CARACTERIZACION: seg["CARACTERIZACIÓN / ANÁLISIS DE CARGAS REALIZADO"] || seg["CARACTERIZACION"] || null,
+          INFORME_PRELIMINAR: seg["INFORME PRELIMINAR / PRESENTACIÓN PARA JEFE"] || seg["INFORME_PRELIMINAR"] || null,
+          INFORME_FINAL: seg["INFORME FINAL"] || seg["INFORME_FINAL"] || null,
+          FECHA: seg["FECHA"] || seg["Fecha"] || null
+        };
+      });
+
+      poblarSelectorCortes(datosSeguimiento);
+      poblarFiltroSedes(datosUnificados);
+      filtrarPorCorte();
+    }
+
+    function poblarSelectorCortes(datosSeg) {
+      const fechas = [...new Set(datosSeg.map(d => d.FECHA || d.Fecha).filter(Boolean))].sort();
       const select = document.getElementById("filtroCorte");
       select.innerHTML = '<option value="TODOS">Consolidado Acumulado (Todos los cortes)</option>';
       fechas.forEach(f => {
@@ -224,15 +271,15 @@
     function filtrarPorCorte() {
       const fechaSeleccionada = document.getElementById("filtroCorte").value;
       if (fechaSeleccionada === "TODOS") {
-        datosFiltradosPorCorte = [...datosOriginales];
+        datosFiltradosPorCorte = [...datosUnificados];
       } else {
-        datosFiltradosPorCorte = datosOriginales.filter(d => (d.FECHA || d.Fecha) === fechaSeleccionada);
+        datosFiltradosPorCorte = datosUnificados.filter(d => !d.FECHA || d.FECHA === fechaSeleccionada);
       }
       actualizarTablero(datosFiltradosPorCorte);
     }
 
     function formatEstado(val) {
-      if (!val || val.toString().trim() === "" || val === "—") return '<span class="text-gray-400 font-bold">—</span>';
+      if (val === null || val === undefined || val.toString().trim() === "" || val === "—") return '<span class="text-gray-400 font-bold">—</span>';
       const clean = val.toString().toUpperCase().trim();
       if (clean === "SI" || clean === "✓") return '<span class="text-emerald-600 font-bold">✓</span>';
       if (clean === "NO" || clean === "✕") return '<span class="text-rose-600 font-bold">✕</span>';
@@ -245,23 +292,27 @@
     }
 
     function actualizarTablero(datos) {
+      let totalUnidadesUO = 0;
       let totalLevantados = 0;
       let mesasAperturadas = 0;
       let unidadesLevantadas = 0;
 
       datos.forEach(row => {
-        const lev = parseInt(row["SERVIDORES CON CARGA LEVANTADA"] || row["Servidores con Carga Levantada"] || 0, 10);
+        if (row.ES_UNIDAD_ORGANIZACIONAL === "SI") totalUnidadesUO++;
+
+        const lev = parseInt(row.SERVIDORES_LEVANTADOS, 10);
         if (!isNaN(lev)) totalLevantados += lev;
 
-        const estadoMesa = (row["ESTADO DE LAS MESAS DE APERTURA"] || "").toString().toUpperCase();
+        const estadoMesa = (row.ESTADO_MESA || "").toString().toUpperCase();
         if (estadoMesa.includes("APERTURADA")) mesasAperturadas++;
 
-        const unLev = (row["UNIDAD LEVANTADA"] || "").toString().toUpperCase();
+        const unLev = (row.UNIDAD_LEVANTADA || "").toString().toUpperCase();
         if (unLev === "SI") unidadesLevantadas++;
       });
 
       const pctGlobal = ((totalLevantados / META_SERVIDORES) * 100).toFixed(2);
 
+      document.getElementById("kpiTotalUnidades").innerText = totalUnidadesUO;
       document.getElementById("kpiLevantados").innerText = totalLevantados.toLocaleString();
       document.getElementById("kpiPorcentaje").innerText = `${pctGlobal}%`;
       document.getElementById("kpiMesasAperturadas").innerText = mesasAperturadas;
@@ -271,52 +322,62 @@
       document.getElementById("barraAvance").style.width = `${Math.min(pctGlobal, 100)}%`;
 
       renderTabla(datos);
-      renderGraficoMesas(datos);
-      renderGraficoSedes(datos);
+      renderGraficoMesasSede(datos);
+      renderGraficoServidoresSede(datos);
     }
 
-    function renderGraficoMesas(datos) {
-      const estadosMap = {};
-      datos.forEach(d => {
-        const estado = d["ESTADO DE LAS MESAS DE APERTURA"] || "Sin Registro";
-        estadosMap[estado] = (estadosMap[estado] || 0) + 1;
-      });
-
-      const ctx = document.getElementById("chartMesas").getContext("2d");
-      if (chartMesasObj) chartMesasObj.destroy();
-
-      chartMesasObj = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: Object.keys(estadosMap),
-          datasets: [{
-            data: Object.values(estadosMap),
-            backgroundColor: ['#006633', '#4f46e5', '#f59e0b', '#ef4444', '#9ca3af', '#8b5cf6']
-          }]
-        },
-        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-      });
-    }
-
-    function renderGraficoSedes(datos) {
+    function renderGraficoMesasSede(datos) {
       const sedesMap = {};
       datos.forEach(d => {
-        const sede = d["SEDE"] || d["Sede"] || "Sin Sede";
-        const lev = parseInt(d["SERVIDORES CON CARGA LEVANTADA"] || 0, 10);
+        if (d.ES_UNIDAD_ORGANIZACIONAL === "SI") {
+          const sede = d.ID_SEDE || "Sin Sede";
+          if (!sedesMap[sede]) sedesMap[sede] = { total: 0, aperturadas: 0 };
+          sedesMap[sede].total++;
+          
+          const estado = (d.ESTADO_MESA || "").toString().toUpperCase();
+          if (estado.includes("APERTURADA")) sedesMap[sede].aperturadas++;
+        }
+      });
+
+      const labels = Object.keys(sedesMap);
+      const dataTotales = labels.map(l => sedesMap[l].total);
+      const dataAperturadas = labels.map(l => sedesMap[l].aperturadas);
+
+      const ctx = document.getElementById("chartSedesMesas").getContext("2d");
+      if (chartSedesMesasObj) chartSedesMesasObj.destroy();
+
+      chartSedesMesasObj = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'Mesas Aperturadas', data: dataAperturadas, backgroundColor: '#006633', borderRadius: 4 },
+            { label: 'Unidades Totales', data: dataTotales, backgroundColor: '#e5e7eb', borderRadius: 4 }
+          ]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+      });
+    }
+
+    function renderGraficoServidoresSede(datos) {
+      const sedesMap = {};
+      datos.forEach(d => {
+        const sede = d.ID_SEDE || "Sin Sede";
+        const lev = parseInt(d.SERVIDORES_LEVANTADOS || 0, 10);
         sedesMap[sede] = (sedesMap[sede] || 0) + (isNaN(lev) ? 0 : lev);
       });
 
-      const ctx = document.getElementById("chartSedes").getContext("2d");
-      if (chartSedesObj) chartSedesObj.destroy();
+      const ctx = document.getElementById("chartSedesServidores").getContext("2d");
+      if (chartSedesServidoresObj) chartSedesServidoresObj.destroy();
 
-      chartSedesObj = new Chart(ctx, {
+      chartSedesServidoresObj = new Chart(ctx, {
         type: 'bar',
         data: {
           labels: Object.keys(sedesMap),
           datasets: [{
             label: 'Servidores Levantados',
             data: Object.values(sedesMap),
-            backgroundColor: '#006633',
+            backgroundColor: '#2563eb',
             borderRadius: 4
           }]
         },
@@ -325,7 +386,7 @@
     }
 
     function poblarFiltroSedes(datos) {
-      const sedes = [...new Set(datos.map(d => d.SEDE || d.Sede).filter(Boolean))];
+      const sedes = [...new Set(datos.map(d => d.ID_SEDE).filter(Boolean))].sort();
       const select = document.getElementById("filtroSede");
       select.innerHTML = '<option value="">Todas las Sedes</option>';
       sedes.forEach(s => { select.innerHTML += `<option value="${s}">${s}</option>`; });
@@ -336,13 +397,13 @@
       tbody.innerHTML = "";
 
       if (datos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" class="text-center p-6 text-gray-400">Sin registros para el corte o filtro seleccionado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="text-center p-6 text-gray-400">Sin registros.</td></tr>';
         return;
       }
 
       datos.forEach(row => {
-        const totalServ = parseInt(row["TOTAL SERVIDORES"], 10);
-        const servLev = parseInt(row["SERVIDORES CON CARGA LEVANTADA"], 10);
+        const totalServ = parseInt(row.TOTAL_SERVIDORES, 10);
+        const servLev = parseInt(row.SERVIDORES_LEVANTADOS, 10);
         
         let pct = "—";
         if (!isNaN(totalServ) && totalServ > 0 && !isNaN(servLev)) {
@@ -352,17 +413,17 @@
         const tr = document.createElement("tr");
         tr.className = "hover:bg-green-50/50 transition border-b border-gray-100";
         tr.innerHTML = `
-          <td class="p-3 font-mono text-[11px] text-gray-500">${row["ID_UADMIN"] || "—"}</td>
-          <td class="p-3 text-gray-600">${row["SEDE"] || "—"}</td>
-          <td class="p-3 font-medium text-gray-900">${row["DEPENDENCIA"] || "—"}</td>
-          <td class="p-3 text-center">${formatEstado(row["ESTADO DE LAS MESAS DE APERTURA"])}</td>
+          <td class="p-3 font-mono text-[11px] text-gray-500">${row.ID_UADMIN || "—"}</td>
+          <td class="p-3 text-gray-600">${row.ID_SEDE || "—"}</td>
+          <td class="p-3 font-medium text-gray-900">${row.NOMBRE_DEPENDENCIA}</td>
+          <td class="p-3 text-center">${formatEstado(row.ESTADO_MESA)}</td>
           <td class="p-3 text-center">${formatNumber(totalServ)}</td>
           <td class="p-3 text-center">${formatNumber(servLev)}</td>
           <td class="p-3 text-center font-bold text-unal">${pct}</td>
-          <td class="p-3 text-center">${formatEstado(row["SOLICITUD DE INFORMACIÓN / VOLÚMENES DE TRABAJO"] || row["SOLICITUD_INFO"])}</td>
-          <td class="p-3 text-center">${formatEstado(row["CARACTERIZACIÓN / ANÁLISIS DE CARGAS REALIZADO"] || row["CARACTERIZACION"])}</td>
-          <td class="p-3 text-center">${formatEstado(row["INFORME PRELIMINAR / PRESENTACIÓN PARA JEFE"] || row["INFORME_PRELIMINAR"])}</td>
-          <td class="p-3 text-center">${formatEstado(row["INFORME FINAL"] || row["INFORME_FINAL"])}</td>
+          <td class="p-3 text-center">${formatEstado(row.SOLICITUD_INFO)}</td>
+          <td class="p-3 text-center">${formatEstado(row.CARACTERIZACION)}</td>
+          <td class="p-3 text-center">${formatEstado(row.INFORME_PRELIMINAR)}</td>
+          <td class="p-3 text-center">${formatEstado(row.INFORME_FINAL)}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -373,8 +434,8 @@
       const sede = document.getElementById("filtroSede").value;
 
       const filtrados = datosFiltradosPorCorte.filter(d => {
-        const depName = (d["DEPENDENCIA"] || "").toLowerCase();
-        const depSede = d["SEDE"] || "";
+        const depName = (d.NOMBRE_DEPENDENCIA || "").toLowerCase();
+        const depSede = d.ID_SEDE || "";
         return depName.includes(nombre) && (sede === "" || depSede === sede);
       });
 
