@@ -61,7 +61,7 @@
           <span>Fuente Operativa: <strong class="text-gray-700">SEGUIMIENTO</strong></span>
         </div>
         <div>
-          <span>Estado del Sistema: <strong class="text-emerald-600">En Línea</strong></span>
+          <span>Vista de Tabla: <strong class="text-emerald-600">Solo registros activos</strong></span>
         </div>
       </div>
     </header>
@@ -129,12 +129,12 @@
       </div>
     </section>
 
-    <!-- TABLA UNIFICADA CON ORDENAMIENTO POR COLUMNA -->
+    <!-- TABLA UNIFICADA CON FILTRADO DE SOLO ACTIVAS Y ORDENAMIENTO -->
     <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       <div class="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
-          <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wider">Avance Consolidado por Unidad Organizacional</h3>
-          <p class="text-[11px] text-gray-400">Haz clic en cualquier título de la tabla para ordenar los datos (mayor a menor / menor a mayor)</p>
+          <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wider">Dependencias con Registro de Avance en Hoja</h3>
+          <p class="text-[11px] text-gray-400">Mostrando solo unidades que poseen estado de mesa registrado. Haz clic en un título para ordenar.</p>
         </div>
         
         <div class="flex flex-wrap gap-2 w-full md:w-auto no-print">
@@ -172,7 +172,7 @@
     </section>
 
     <footer class="text-center text-xs text-gray-400 py-4 border-t border-gray-200">
-      Universidad Nacional de Colombia • Dirección Nacional de Personal Académico y Administrativo (DNPAA)[cite: 1, 4]
+      Universidad Nacional de Colombia • Dirección Nacional de Personal Académico y Administrativo (DNPAA)[cite: 4]
     </footer>
 
   </div>
@@ -188,7 +188,7 @@
     let datosUnificados = [];
     let datosProcesados = [];
 
-    // Estado del ordenamiento actual
+    // Estado de ordenamiento predeterminado
     let columnaOrden = 'NOMBRE_DEPENDENCIA';
     let ordenAscendente = true;
 
@@ -260,8 +260,8 @@
       });
 
       poblarFiltroSedes(datosUnificados);
-      actualizarKpisYGraficos(datosUnificados);
-      filtrarYRenderizar();
+      actualizarKpisYGraficos(datosUnificados); // Los KPIs respetan el total maestro
+      filtrarYRenderizar();                     // La tabla oculta los registros totalmente vacíos
     }
 
     function formatEstado(val) {
@@ -377,7 +377,7 @@
       sedes.forEach(s => { select.innerHTML += `<option value="${s}">${s}</option>`; });
     }
 
-    // LÓGICA DE FILTRADO Y ORDENAMIENTO DE LA TABLA
+    // FILTRADO: EXCLUYE REGISTROS SIN ESTADO DE MESA ("—" o null)
     function filtrarYRenderizar() {
       const nombre = document.getElementById("filtroNombre").value.toLowerCase();
       const sede = document.getElementById("filtroSede").value;
@@ -385,7 +385,17 @@
       datosProcesados = datosUnificados.filter(d => {
         const depName = (d.NOMBRE_DEPENDENCIA || "").toLowerCase();
         const depSede = d.ID_SEDE || "";
-        return depName.includes(nombre) && (sede === "" || depSede === sede);
+
+        // Condición para ocultar dependencias vacías en la tabla
+        const tieneEstadoMesa = d.ESTADO_MESA !== null && 
+                                d.ESTADO_MESA !== undefined && 
+                                d.ESTADO_MESA.toString().trim() !== "" && 
+                                d.ESTADO_MESA.toString().trim() !== "—";
+
+        const matchNombre = depName.includes(nombre);
+        const matchSede = (sede === "" || depSede === sede);
+
+        return tieneEstadoMesa && matchNombre && matchSede;
       });
 
       aplicarOrdenamiento();
@@ -441,7 +451,7 @@
       tbody.innerHTML = "";
 
       if (datos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" class="text-center p-6 text-gray-400">Sin registros para el filtro seleccionado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="text-center p-6 text-gray-400">Sin dependencias activas con registro para el filtro seleccionado.</td></tr>';
         return;
       }
 
