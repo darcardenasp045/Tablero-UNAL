@@ -23,6 +23,20 @@
       body { background: white; padding: 0; }
       .shadow-sm, .shadow-md { box-shadow: none !important; }
     }
+
+    /* Animación para el Spinner de carga */
+    .spinner {
+      border: 4px solid rgba(0, 102, 51, 0.1);
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border-left-color: #006633;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans p-4 md:p-6">
@@ -44,8 +58,8 @@
 
         <!-- Botones de Acción -->
         <div class="flex items-center gap-2 no-print">
-          <button onclick="cargarAmbasFuentes()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold py-2 px-3.5 rounded-lg border border-emerald-500 transition flex items-center gap-1.5 shadow-sm">
-            🔄 Sincronizar Fuentes
+          <button id="btnSincronizar" onclick="cargarAmbasFuentes()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold py-2 px-3.5 rounded-lg border border-emerald-500 transition flex items-center gap-1.5 shadow-sm">
+            <span>🔄 Sincronizar Fuentes</span>
           </button>
           <button onclick="window.print()" class="bg-white text-unal hover:bg-gray-100 text-xs font-bold py-2 px-3.5 rounded-lg transition shadow-sm flex items-center gap-1.5">
             🖨️ Generar Informe / PDF
@@ -129,8 +143,8 @@
       </div>
     </section>
 
-    <!-- TABLA UNIFICADA CON FILTRADO DE SOLO ACTIVAS Y ORDENAMIENTO -->
-    <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <!-- TABLA UNIFICADA CON FILTRADO Y ORDENAMIENTO -->
+    <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden relative">
       <div class="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
           <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wider">Dependencias con Registro de Avance en Hoja</h3>
@@ -145,7 +159,14 @@
         </div>
       </div>
 
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto min-h-[300px] relative">
+        
+        <!-- COMPONENTE OVERLAY LOADER -->
+        <div id="loaderOverlay" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center gap-3">
+          <div class="spinner"></div>
+          <p class="text-xs font-bold text-unal animate-pulse">Cargando y procesando información desde Google Sheets...</p>
+        </div>
+
         <table class="w-full text-left text-xs border-collapse">
           <thead class="bg-gray-100 text-gray-600 uppercase font-semibold border-b border-gray-200 select-none">
             <tr>
@@ -163,16 +184,14 @@
             </tr>
           </thead>
           <tbody id="tablaCuerpo" class="divide-y divide-gray-100">
-            <tr>
-              <td colspan="11" class="text-center p-6 text-gray-400 font-medium">Sincronizando fuentes con Google Sheets...</td>
-            </tr>
+            <!-- Filas dinámicas -->
           </tbody>
         </table>
       </div>
     </section>
 
     <footer class="text-center text-xs text-gray-400 py-4 border-t border-gray-200">
-      Universidad Nacional de Colombia • Dirección Nacional de Personal Académico y Administrativo (DNPAA)• Daniel Cardenas - Contratista
+      Universidad Nacional de Colombia • Dirección Nacional de Personal Académico y Administrativo (DNPAA)[cite: 4]
     </footer>
 
   </div>
@@ -188,7 +207,6 @@
     let datosUnificados = [];
     let datosProcesados = [];
 
-    // Estado de ordenamiento predeterminado
     let columnaOrden = 'NOMBRE_DEPENDENCIA';
     let ordenAscendente = true;
 
@@ -199,7 +217,24 @@
       cargarAmbasFuentes();
     });
 
+    function mostrarLoader(activar) {
+      const loader = document.getElementById("loaderOverlay");
+      const btnBtn = document.getElementById("btnSincronizar");
+      
+      if (activar) {
+        loader.classList.remove("hidden");
+        btnBtn.disabled = true;
+        btnBtn.classList.add("opacity-60", "cursor-not-allowed");
+      } else {
+        loader.classList.add("hidden");
+        btnBtn.disabled = false;
+        btnBtn.classList.remove("opacity-60", "cursor-not-allowed");
+      }
+    }
+
     function cargarAmbasFuentes() {
+      mostrarLoader(true);
+
       Papa.parse(URL_MAESTRO_DEPENDENCIAS, {
         download: true,
         header: true,
@@ -216,8 +251,18 @@
             complete: function(resSeguimiento) {
               datosSeguimiento = resSeguimiento.data;
               hacerCrucedatos();
+            },
+            error: function(err) {
+              console.error("Error al cargar seguimiento:", err);
+              mostrarLoader(false);
+              alert("Ocurrió un error al descargar la hoja de seguimiento.");
             }
           });
+        },
+        error: function(err) {
+          console.error("Error al cargar maestro:", err);
+          mostrarLoader(false);
+          alert("Ocurrió un error al descargar el maestro de dependencias.");
         }
       });
     }
@@ -260,8 +305,11 @@
       });
 
       poblarFiltroSedes(datosUnificados);
-      actualizarKpisYGraficos(datosUnificados); // Los KPIs respetan el total maestro
-      filtrarYRenderizar();                     // La tabla oculta los registros totalmente vacíos
+      actualizarKpisYGraficos(datosUnificados);
+      filtrarYRenderizar();
+      
+      // Ocultar pantalla de carga al finalizar
+      mostrarLoader(false);
     }
 
     function formatEstado(val) {
@@ -377,7 +425,6 @@
       sedes.forEach(s => { select.innerHTML += `<option value="${s}">${s}</option>`; });
     }
 
-    // FILTRADO: EXCLUYE REGISTROS SIN ESTADO DE MESA ("—" o null)
     function filtrarYRenderizar() {
       const nombre = document.getElementById("filtroNombre").value.toLowerCase();
       const sede = document.getElementById("filtroSede").value;
@@ -386,7 +433,6 @@
         const depName = (d.NOMBRE_DEPENDENCIA || "").toLowerCase();
         const depSede = d.ID_SEDE || "";
 
-        // Condición para ocultar dependencias vacías en la tabla
         const tieneEstadoMesa = d.ESTADO_MESA !== null && 
                                 d.ESTADO_MESA !== undefined && 
                                 d.ESTADO_MESA.toString().trim() !== "" && 
