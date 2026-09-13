@@ -89,13 +89,9 @@
       </div>
 
       <div class="bg-white p-4 rounded-xl border-t-4 border-cyan-600 shadow-sm">
-        <span class="text-xs font-semibold uppercase text-gray-400">
-          Total de Servidores
-        </span>
+        <span class="text-xs font-semibold uppercase text-gray-400">Total de Servidores</span>
         <div class="text-2xl font-black text-cyan-700 mt-1">3.178</div>
-        <span class="text-[10px] text-gray-400">
-          Fuente SARA • Corte: 31/08/2026
-        </span>
+        <span class="text-[10px] text-gray-400">Fuente SARA • Corte: 31/08/2026</span>
       </div>
       
       <div class="bg-white p-4 rounded-xl border-t-4 border-emerald-500 shadow-sm">
@@ -107,7 +103,7 @@
       <div class="bg-white p-4 rounded-xl border-t-4 border-blue-600 shadow-sm">
         <span class="text-xs font-semibold uppercase text-gray-400">% Avance Servidores</span>
         <div id="kpiPorcentaje" class="text-2xl font-black text-blue-600 mt-1">0.00%</div>
-        <span class="text-[10px] text-gray-400">Meta global: 3,172</span>
+        <span class="text-[10px] text-gray-400">Meta global: 3,178</span>
       </div>
 
       <div class="bg-white p-4 rounded-xl border-t-4 border-purple-600 shadow-sm">
@@ -119,7 +115,7 @@
       <div class="bg-white p-4 rounded-xl border-t-4 border-amber-500 shadow-sm">
         <span class="text-xs font-semibold uppercase text-gray-400">UNIDADES CON ENTREVISTAS FINALIZADAS</span>
         <div id="kpiUnidadesLev" class="text-2xl font-black text-amber-600 mt-1">0</div>
-        <span class="text-[10px] text-gray-400">Unidades organizacionales con el 100% de sus servidores entrevistados</span>
+        <span class="text-[10px] text-gray-400">Unidades con 100% servidores entrevistados</span>
       </div>
     </section>
 
@@ -200,6 +196,7 @@
       </div>
     </section>
 
+    <!-- PIE DE PÁGINA INSTITUCIONAL -->
     <footer class="text-center text-xs text-gray-400 py-4 border-t border-gray-200">
       Universidad Nacional de Colombia • Dirección Nacional de Personal Académico y Administrativo (DNPAA) • Elaborado por: Daniel Cardenas - Contratista
     </footer>
@@ -207,7 +204,7 @@
   </div>
 
   <script>
-    const META_SERVIDORES = 3172;
+    const META_SERVIDORES = 3178;
     
     const URL_MAESTRO_DEPENDENCIAS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTfZLZW0YYGXcClSIkOZfTF40T_HBmN_7aIW5A8_JGVBu9q4hEivXuJq3Q2OXOsl6udC0oQGQgTk5DE/pub?gid=52723933&single=true&output=csv';
     const URL_SEGUIMIENTO_ANALISTAS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQYT9HUSG3fUIq3HmgJqRqlPvgSFlyEVdzAzxliMM0ihN4ceDJaruJz-Cs54cbERw/pub?gid=1558092341&single=true&output=csv';
@@ -245,12 +242,18 @@
     function cargarAmbasFuentes() {
       mostrarLoader(true);
 
+      const tbody = document.getElementById("tablaCuerpo");
+      if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="11" class="text-center p-6 text-gray-400 font-medium">Conectando con Google Sheets... Por favor espere.</td></tr>';
+      }
+
       Papa.parse(URL_MAESTRO_DEPENDENCIAS, {
         download: true,
         header: true,
         dynamicTyping: true,
         skipEmptyLines: true,
         complete: function(resMaestro) {
+          if (!resMaestro.data || resMaestro.data.length === 0) return;
           datosMaestro = resMaestro.data;
 
           Papa.parse(URL_SEGUIMIENTO_ANALISTAS, {
@@ -259,67 +262,77 @@
             dynamicTyping: true,
             skipEmptyLines: true,
             complete: function(resSeguimiento) {
+              if (!resSeguimiento.data || resSeguimiento.data.length === 0) return;
               datosSeguimiento = resSeguimiento.data;
               hacerCrucedatos();
             },
             error: function(err) {
               console.error("Error al cargar seguimiento:", err);
-              mostrarLoader(false);
-              alert("Ocurrió un error al descargar la hoja de seguimiento.");
+              mostrarErrorConexion("Error al descargar la hoja operativa de seguimiento.");
             }
           });
         },
         error: function(err) {
           console.error("Error al cargar maestro:", err);
-          mostrarLoader(false);
-          alert("Ocurrió un error al descargar el maestro de dependencias.");
+          mostrarErrorConexion("Error al descargar el maestro de dependencias.");
         }
       });
     }
 
     function hacerCrucedatos() {
-      const mapaSeguimiento = {};
-      datosSeguimiento.forEach(row => {
-        const key = (row["ID_UADMIN"] || "").toString().trim();
-        if (key) mapaSeguimiento[key] = row;
-      });
+      try {
+        const mapaSeguimiento = {};
+        datosSeguimiento.forEach(row => {
+          const key = (row["ID_UADMIN"] || "").toString().trim();
+          if (key) mapaSeguimiento[key] = row;
+        });
 
-      datosUnificados = datosMaestro.map(dep => {
-        const key = (dep["ID_UADMIN"] || "").toString().trim();
-        const seg = mapaSeguimiento[key] || {};
+        datosUnificados = datosMaestro.map(dep => {
+          const key = (dep["ID_UADMIN"] || "").toString().trim();
+          const seg = mapaSeguimiento[key] || {};
 
-        const totalServ = seg["TOTAL SERVIDORES"] !== undefined ? seg["TOTAL SERVIDORES"] : null;
-        const servLev = seg["SERVIDORES CON CARGA LEVANTADA"] !== undefined ? seg["SERVIDORES CON CARGA LEVANTADA"] : null;
-        
-        let pct = null;
-        if (totalServ !== null && !isNaN(totalServ) && totalServ > 0 && servLev !== null && !isNaN(servLev)) {
-          pct = parseFloat(((servLev / totalServ) * 100).toFixed(1));
-        }
-
-        return {
-          ID_UADMIN: key,
-          ID_SEDE: dep["ID_SEDE"] || dep["ID SEDE"] || "01 - NIVEL NACIONAL",
-          NOMBRE_DEPENDENCIA: dep["NOMBRE DE LA DEPENDENCIA"] || dep["DEPENDENCIA"] || "Sin Nombre",
-          ES_UNIDAD_ORGANIZACIONAL: (dep["ES UNIDAD ORGANIZACIONAL?"] || dep["ES UNIDAD ORGANIZACIONAL"] || "").toString().toUpperCase().trim(),
+          const totalServ = seg["TOTAL SERVIDORES"] !== undefined ? seg["TOTAL SERVIDORES"] : null;
+          const servLev = seg["SERVIDORES CON CARGA LEVANTADA"] !== undefined ? seg["SERVIDORES CON CARGA LEVANTADA"] : null;
           
-          ESTADO_MESA: seg["ESTADO DE LAS MESAS DE APERTURA"] || dep["ESTADO DE LAS MESAS DE APERTURA"] || null,
-          TOTAL_SERVIDORES: totalServ,
-          SERVIDORES_LEVANTADOS: servLev,
-          PCT_AVANCE: pct,
-          UNIDAD_LEVANTADA: seg["UNIDAD LEVANTADA"] || dep["UNIDAD LEVANTADA"] || null,
-          SOLICITUD_INFO: seg["SOLICITUD DE INFORMACIÓN / VOLÚMENES DE TRABAJO"] || seg["SOLICITUD_INFO"] || null,
-          CARACTERIZACION: seg["CARACTERIZACIÓN / ANÁLISIS DE CARGAS REALIZADO"] || seg["CARACTERIZACION"] || null,
-          INFORME_PRELIMINAR: seg["INFORME PRELIMINAR / PRESENTACIÓN PARA JEFE"] || seg["INFORME_PRELIMINAR"] || null,
-          INFORME_FINAL: seg["INFORME FINAL"] || seg["INFORME_FINAL"] || null
-        };
-      });
+          let pct = null;
+          if (totalServ !== null && !isNaN(totalServ) && totalServ > 0 && servLev !== null && !isNaN(servLev)) {
+            pct = parseFloat(((servLev / totalServ) * 100).toFixed(1));
+          }
 
-      poblarFiltroSedes(datosUnificados);
-      actualizarKpisYGraficos(datosUnificados);
-      filtrarYRenderizar();
-      
-      // Ocultar pantalla de carga al finalizar
+          return {
+            ID_UADMIN: key,
+            ID_SEDE: dep["ID_SEDE"] || dep["ID SEDE"] || "01 - NIVEL NACIONAL",
+            NOMBRE_DEPENDENCIA: dep["NOMBRE DE LA DEPENDENCIA"] || dep["DEPENDENCIA"] || "Sin Nombre",
+            ES_UNIDAD_ORGANIZACIONAL: (dep["ES UNIDAD ORGANIZACIONAL?"] || dep["ES UNIDAD ORGANIZACIONAL"] || "").toString().toUpperCase().trim(),
+            
+            ESTADO_MESA: seg["ESTADO DE LAS MESAS DE APERTURA"] || dep["ESTADO DE LAS MESAS DE APERTURA"] || null,
+            TOTAL_SERVIDORES: totalServ,
+            SERVIDORES_LEVANTADOS: servLev,
+            PCT_AVANCE: pct,
+            UNIDAD_LEVANTADA: seg["UNIDAD LEVANTADA"] || dep["UNIDAD LEVANTADA"] || null,
+            SOLICITUD_INFO: seg["SOLICITUD DE INFORMACIÓN / VOLÚMENES DE TRABAJO"] || seg["SOLICITUD_INFO"] || null,
+            CARACTERIZACION: seg["CARACTERIZACIÓN / ANÁLISIS DE CARGAS REALIZADO"] || seg["CARACTERIZACION"] || null,
+            INFORME_PRELIMINAR: seg["INFORME PRELIMINAR / PRESENTACIÓN PARA JEFE"] || seg["INFORME_PRELIMINAR"] || null,
+            INFORME_FINAL: seg["INFORME FINAL"] || seg["INFORME_FINAL"] || null
+          };
+        });
+
+        poblarFiltroSedes(datosUnificados);
+        actualizarKpisYGraficos(datosUnificados);
+        filtrarYRenderizar();
+      } catch (e) {
+        console.error("Error procesando datos:", e);
+      } finally {
+        mostrarLoader(false);
+      }
+    }
+
+    function mostrarErrorConexion(mensaje) {
       mostrarLoader(false);
+      const tbody = document.getElementById("tablaCuerpo");
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="11" class="text-center p-6 text-amber-600 font-medium">⚠️ ${mensaje} Presione "🔄 Sincronizar Fuentes" para reintentar.</td></tr>`;
+      }
     }
 
     function formatEstado(val) {
