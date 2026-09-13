@@ -42,7 +42,7 @@
           </div>
         </div>
 
-        <!-- Botones de Acción para Vercel -->
+        <!-- Botones de Acción -->
         <div class="flex items-center gap-2 no-print">
           <button onclick="cargarAmbasFuentes()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold py-2 px-3.5 rounded-lg border border-emerald-500 transition flex items-center gap-1.5 shadow-sm">
             🔄 Sincronizar Fuentes
@@ -53,18 +53,15 @@
         </div>
       </div>
 
-      <!-- Barra de Estado y Filtro por Fecha de Corte -->
-      <div class="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-gray-600">
-        <div class="flex items-center gap-2">
-          <span class="font-bold text-gray-700">📅 Fecha / Semana de Corte:</span>
-          <select id="filtroCorte" onchange="filtrarPorCorte()" class="border border-gray-300 rounded-lg p-1.5 bg-white text-gray-800 focus:ring-2 focus:ring-green-700 focus:outline-none font-semibold">
-            <option value="TODOS">Consolidado Acumulado (Todos los cortes)</option>
-          </select>
-        </div>
-        <div class="flex items-center gap-4 text-gray-500">
+      <!-- Estado de Fuentes Integradas -->
+      <div class="p-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center text-xs font-medium text-gray-500">
+        <div class="flex items-center gap-4">
           <span>Fuente Maestro: <strong class="text-gray-700">DEPENDENCIAS</strong></span>
           <span>•</span>
           <span>Fuente Operativa: <strong class="text-gray-700">SEGUIMIENTO</strong></span>
+        </div>
+        <div>
+          <span>Estado del Sistema: <strong class="text-emerald-600">En Línea</strong></span>
         </div>
       </div>
     </header>
@@ -113,9 +110,9 @@
       </div>
     </div>
 
-    <!-- SECCIÓN DE GRÁFICOS INTERACTIVOS -->
+    <!-- SECCIÓN DE GRÁFICOS -->
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Gráfico 1: Cobertura de Mesas de Apertura por Sede -->
+      <!-- Gráfico 1: Mesas de Apertura por Sede -->
       <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
         <h3 class="font-bold text-gray-800 text-sm mb-4 flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-unal"></span> Mesas Aperturadas por Sede (vs. Universo)
@@ -132,14 +129,17 @@
       </div>
     </section>
 
-    <!-- TABLA UNIFICADA DE DEPENDENCIAS -->
+    <!-- TABLA UNIFICADA CON ORDENAMIENTO POR COLUMNA -->
     <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       <div class="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
-        <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wider">Avance Consolidado por Unidad Organizacional</h3>
+        <div>
+          <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wider">Avance Consolidado por Unidad Organizacional</h3>
+          <p class="text-[11px] text-gray-400">Haz clic en cualquier título de la tabla para ordenar los datos (mayor a menor / menor a mayor)</p>
+        </div>
         
         <div class="flex flex-wrap gap-2 w-full md:w-auto no-print">
-          <input type="text" id="filtroNombre" oninput="filtrarTabla()" placeholder="Buscar dependencia..." class="border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-green-700 focus:outline-none w-full md:w-48" />
-          <select id="filtroSede" onchange="filtrarTabla()" class="border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-green-700 focus:outline-none">
+          <input type="text" id="filtroNombre" oninput="filtrarYRenderizar()" placeholder="Buscar dependencia..." class="border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-green-700 focus:outline-none w-full md:w-48" />
+          <select id="filtroSede" onchange="filtrarYRenderizar()" class="border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-green-700 focus:outline-none">
             <option value="">Todas las Sedes</option>
           </select>
         </div>
@@ -147,19 +147,19 @@
 
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs border-collapse">
-          <thead class="bg-gray-100 text-gray-600 uppercase font-semibold border-b border-gray-200">
+          <thead class="bg-gray-100 text-gray-600 uppercase font-semibold border-b border-gray-200 select-none">
             <tr>
-              <th class="p-3">ID_UADMIN</th>
-              <th class="p-3">Sede</th>
-              <th class="p-3">Nombre de la Dependencia</th>
-              <th class="p-3 text-center">Estado Mesa</th>
-              <th class="p-3 text-center">Total Serv.</th>
-              <th class="p-3 text-center">Levantados</th>
-              <th class="p-3 text-center">% Avance</th>
-              <th class="p-3 text-center">Solicitud</th>
-              <th class="p-3 text-center">Caracterización</th>
-              <th class="p-3 text-center">Informe Prel.</th>
-              <th class="p-3 text-center">Informe Final</th>
+              <th onclick="ordenarPor('ID_UADMIN')" class="p-3 cursor-pointer hover:bg-gray-200 transition">ID_UADMIN <span id="sort-ID_UADMIN">↕</span></th>
+              <th onclick="ordenarPor('ID_SEDE')" class="p-3 cursor-pointer hover:bg-gray-200 transition">Sede <span id="sort-ID_SEDE">↕</span></th>
+              <th onclick="ordenarPor('NOMBRE_DEPENDENCIA')" class="p-3 cursor-pointer hover:bg-gray-200 transition">Nombre de la Dependencia <span id="sort-NOMBRE_DEPENDENCIA">↕</span></th>
+              <th onclick="ordenarPor('ESTADO_MESA')" class="p-3 text-center cursor-pointer hover:bg-gray-200 transition">Estado Mesa <span id="sort-ESTADO_MESA">↕</span></th>
+              <th onclick="ordenarPor('TOTAL_SERVIDORES')" class="p-3 text-center cursor-pointer hover:bg-gray-200 transition">Total Serv. <span id="sort-TOTAL_SERVIDORES">↕</span></th>
+              <th onclick="ordenarPor('SERVIDORES_LEVANTADOS')" class="p-3 text-center cursor-pointer hover:bg-gray-200 transition">Levantados <span id="sort-SERVIDORES_LEVANTADOS">↕</span></th>
+              <th onclick="ordenarPor('PCT_AVANCE')" class="p-3 text-center cursor-pointer hover:bg-gray-200 transition">% Avance <span id="sort-PCT_AVANCE">↕</span></th>
+              <th onclick="ordenarPor('SOLICITUD_INFO')" class="p-3 text-center cursor-pointer hover:bg-gray-200 transition">Solicitud <span id="sort-SOLICITUD_INFO">↕</span></th>
+              <th onclick="ordenarPor('CARACTERIZACION')" class="p-3 text-center cursor-pointer hover:bg-gray-200 transition">Caracterización <span id="sort-CARACTERIZACION">↕</span></th>
+              <th onclick="ordenarPor('INFORME_PRELIMINAR')" class="p-3 text-center cursor-pointer hover:bg-gray-200 transition">Informe Prel. <span id="sort-INFORME_PRELIMINAR">↕</span></th>
+              <th onclick="ordenarPor('INFORME_FINAL')" class="p-3 text-center cursor-pointer hover:bg-gray-200 transition">Informe Final <span id="sort-INFORME_FINAL">↕</span></th>
             </tr>
           </thead>
           <tbody id="tablaCuerpo" class="divide-y divide-gray-100">
@@ -180,16 +180,17 @@
   <script>
     const META_SERVIDORES = 3172;
     
-    // URL Pestaña DEPENDENCIAS (Maestro)
     const URL_MAESTRO_DEPENDENCIAS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTfZLZW0YYGXcClSIkOZfTF40T_HBmN_7aIW5A8_JGVBu9q4hEivXuJq3Q2OXOsl6udC0oQGQgTk5DE/pub?gid=52723933&single=true&output=csv';
-    
-    // URL Pestaña SEGUIMIENTO (Operativo)
     const URL_SEGUIMIENTO_ANALISTAS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQYT9HUSG3fUIq3HmgJqRqlPvgSFlyEVdzAzxliMM0ihN4ceDJaruJz-Cs54cbERw/pub?gid=1558092341&single=true&output=csv';
 
     let datosMaestro = [];
     let datosSeguimiento = [];
     let datosUnificados = [];
-    let datosFiltradosPorCorte = [];
+    let datosProcesados = [];
+
+    // Estado del ordenamiento actual
+    let columnaOrden = 'NOMBRE_DEPENDENCIA';
+    let ordenAscendente = true;
 
     let chartSedesMesasObj = null;
     let chartSedesServidoresObj = null;
@@ -199,7 +200,6 @@
     });
 
     function cargarAmbasFuentes() {
-      // Cargar Maestro de Dependencias
       Papa.parse(URL_MAESTRO_DEPENDENCIAS, {
         download: true,
         header: true,
@@ -208,7 +208,6 @@
         complete: function(resMaestro) {
           datosMaestro = resMaestro.data;
 
-          // Cargar Seguimiento Operativo
           Papa.parse(URL_SEGUIMIENTO_ANALISTAS, {
             download: true,
             header: true,
@@ -223,7 +222,6 @@
       });
     }
 
-    // Cruce de información por la llave ID_UADMIN
     function hacerCrucedatos() {
       const mapaSeguimiento = {};
       datosSeguimiento.forEach(row => {
@@ -235,47 +233,35 @@
         const key = (dep["ID_UADMIN"] || "").toString().trim();
         const seg = mapaSeguimiento[key] || {};
 
+        const totalServ = seg["TOTAL SERVIDORES"] !== undefined ? seg["TOTAL SERVIDORES"] : null;
+        const servLev = seg["SERVIDORES CON CARGA LEVANTADA"] !== undefined ? seg["SERVIDORES CON CARGA LEVANTADA"] : null;
+        
+        let pct = null;
+        if (totalServ !== null && !isNaN(totalServ) && totalServ > 0 && servLev !== null && !isNaN(servLev)) {
+          pct = parseFloat(((servLev / totalServ) * 100).toFixed(1));
+        }
+
         return {
           ID_UADMIN: key,
           ID_SEDE: dep["ID_SEDE"] || dep["ID SEDE"] || "01 - NIVEL NACIONAL",
           NOMBRE_DEPENDENCIA: dep["NOMBRE DE LA DEPENDENCIA"] || dep["DEPENDENCIA"] || "Sin Nombre",
           ES_UNIDAD_ORGANIZACIONAL: (dep["ES UNIDAD ORGANIZACIONAL?"] || dep["ES UNIDAD ORGANIZACIONAL"] || "").toString().toUpperCase().trim(),
           
-          // Campos operativos combinados
           ESTADO_MESA: seg["ESTADO DE LAS MESAS DE APERTURA"] || dep["ESTADO DE LAS MESAS DE APERTURA"] || null,
-          TOTAL_SERVIDORES: seg["TOTAL SERVIDORES"] !== undefined ? seg["TOTAL SERVIDORES"] : null,
-          SERVIDORES_LEVANTADOS: seg["SERVIDORES CON CARGA LEVANTADA"] !== undefined ? seg["SERVIDORES CON CARGA LEVANTADA"] : null,
+          TOTAL_SERVIDORES: totalServ,
+          SERVIDORES_LEVANTADOS: servLev,
+          PCT_AVANCE: pct,
           UNIDAD_LEVANTADA: seg["UNIDAD LEVANTADA"] || dep["UNIDAD LEVANTADA"] || null,
           SOLICITUD_INFO: seg["SOLICITUD DE INFORMACIÓN / VOLÚMENES DE TRABAJO"] || seg["SOLICITUD_INFO"] || null,
           CARACTERIZACION: seg["CARACTERIZACIÓN / ANÁLISIS DE CARGAS REALIZADO"] || seg["CARACTERIZACION"] || null,
           INFORME_PRELIMINAR: seg["INFORME PRELIMINAR / PRESENTACIÓN PARA JEFE"] || seg["INFORME_PRELIMINAR"] || null,
-          INFORME_FINAL: seg["INFORME FINAL"] || seg["INFORME_FINAL"] || null,
-          FECHA: seg["FECHA"] || seg["Fecha"] || null
+          INFORME_FINAL: seg["INFORME FINAL"] || seg["INFORME_FINAL"] || null
         };
       });
 
-      poblarSelectorCortes(datosSeguimiento);
       poblarFiltroSedes(datosUnificados);
-      filtrarPorCorte();
-    }
-
-    function poblarSelectorCortes(datosSeg) {
-      const fechas = [...new Set(datosSeg.map(d => d.FECHA || d.Fecha).filter(Boolean))].sort();
-      const select = document.getElementById("filtroCorte");
-      select.innerHTML = '<option value="TODOS">Consolidado Acumulado (Todos los cortes)</option>';
-      fechas.forEach(f => {
-        select.innerHTML += `<option value="${f}">Corte del ${f}</option>`;
-      });
-    }
-
-    function filtrarPorCorte() {
-      const fechaSeleccionada = document.getElementById("filtroCorte").value;
-      if (fechaSeleccionada === "TODOS") {
-        datosFiltradosPorCorte = [...datosUnificados];
-      } else {
-        datosFiltradosPorCorte = datosUnificados.filter(d => !d.FECHA || d.FECHA === fechaSeleccionada);
-      }
-      actualizarTablero(datosFiltradosPorCorte);
+      actualizarKpisYGraficos(datosUnificados);
+      filtrarYRenderizar();
     }
 
     function formatEstado(val) {
@@ -291,7 +277,7 @@
       return parseInt(val, 10);
     }
 
-    function actualizarTablero(datos) {
+    function actualizarKpisYGraficos(datos) {
       let totalUnidadesUO = 0;
       let totalLevantados = 0;
       let mesasAperturadas = 0;
@@ -321,7 +307,6 @@
       document.getElementById("labelBarraAvance").innerText = `${pctGlobal}% (${totalLevantados} / ${META_SERVIDORES})`;
       document.getElementById("barraAvance").style.width = `${Math.min(pctGlobal, 100)}%`;
 
-      renderTabla(datos);
       renderGraficoMesasSede(datos);
       renderGraficoServidoresSede(datos);
     }
@@ -392,23 +377,76 @@
       sedes.forEach(s => { select.innerHTML += `<option value="${s}">${s}</option>`; });
     }
 
+    // LÓGICA DE FILTRADO Y ORDENAMIENTO DE LA TABLA
+    function filtrarYRenderizar() {
+      const nombre = document.getElementById("filtroNombre").value.toLowerCase();
+      const sede = document.getElementById("filtroSede").value;
+
+      datosProcesados = datosUnificados.filter(d => {
+        const depName = (d.NOMBRE_DEPENDENCIA || "").toLowerCase();
+        const depSede = d.ID_SEDE || "";
+        return depName.includes(nombre) && (sede === "" || depSede === sede);
+      });
+
+      aplicarOrdenamiento();
+      renderTabla(datosProcesados);
+    }
+
+    function ordenarPor(columna) {
+      if (columnaOrden === columna) {
+        ordenAscendente = !ordenAscendente;
+      } else {
+        columnaOrden = columna;
+        ordenAscendente = true;
+      }
+      actualizarIconosOrden();
+      filtrarYRenderizar();
+    }
+
+    function aplicarOrdenamiento() {
+      datosProcesados.sort((a, b) => {
+        let valA = a[columnaOrden];
+        let valB = b[columnaOrden];
+
+        if (valA === null || valA === undefined || valA === "—") valA = ordenAscendente ? Infinity : -Infinity;
+        if (valB === null || valB === undefined || valB === "—") valB = ordenAscendente ? Infinity : -Infinity;
+
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+
+        if (valA < valB) return ordenAscendente ? -1 : 1;
+        if (valA > valB) return ordenAscendente ? 1 : -1;
+        return 0;
+      });
+    }
+
+    function actualizarIconosOrden() {
+      const columnas = ['ID_UADMIN', 'ID_SEDE', 'NOMBRE_DEPENDENCIA', 'ESTADO_MESA', 'TOTAL_SERVIDORES', 'SERVIDORES_LEVANTADOS', 'PCT_AVANCE', 'SOLICITUD_INFO', 'CARACTERIZACION', 'INFORME_PRELIMINAR', 'INFORME_FINAL'];
+      columnas.forEach(col => {
+        const el = document.getElementById(`sort-${col}`);
+        if (el) {
+          if (col === columnaOrden) {
+            el.innerText = ordenAscendente ? '▲' : '▼';
+            el.className = 'text-green-700 font-bold';
+          } else {
+            el.innerText = '↕';
+            el.className = 'text-gray-300';
+          }
+        }
+      });
+    }
+
     function renderTabla(datos) {
       const tbody = document.getElementById("tablaCuerpo");
       tbody.innerHTML = "";
 
       if (datos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" class="text-center p-6 text-gray-400">Sin registros.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="text-center p-6 text-gray-400">Sin registros para el filtro seleccionado.</td></tr>';
         return;
       }
 
       datos.forEach(row => {
-        const totalServ = parseInt(row.TOTAL_SERVIDORES, 10);
-        const servLev = parseInt(row.SERVIDORES_LEVANTADOS, 10);
-        
-        let pct = "—";
-        if (!isNaN(totalServ) && totalServ > 0 && !isNaN(servLev)) {
-          pct = ((servLev / totalServ) * 100).toFixed(1) + "%";
-        }
+        const pct = row.PCT_AVANCE !== null ? `${row.PCT_AVANCE}%` : "—";
 
         const tr = document.createElement("tr");
         tr.className = "hover:bg-green-50/50 transition border-b border-gray-100";
@@ -417,8 +455,8 @@
           <td class="p-3 text-gray-600">${row.ID_SEDE || "—"}</td>
           <td class="p-3 font-medium text-gray-900">${row.NOMBRE_DEPENDENCIA}</td>
           <td class="p-3 text-center">${formatEstado(row.ESTADO_MESA)}</td>
-          <td class="p-3 text-center">${formatNumber(totalServ)}</td>
-          <td class="p-3 text-center">${formatNumber(servLev)}</td>
+          <td class="p-3 text-center">${formatNumber(row.TOTAL_SERVIDORES)}</td>
+          <td class="p-3 text-center">${formatNumber(row.SERVIDORES_LEVANTADOS)}</td>
           <td class="p-3 text-center font-bold text-unal">${pct}</td>
           <td class="p-3 text-center">${formatEstado(row.SOLICITUD_INFO)}</td>
           <td class="p-3 text-center">${formatEstado(row.CARACTERIZACION)}</td>
@@ -427,19 +465,6 @@
         `;
         tbody.appendChild(tr);
       });
-    }
-
-    function filtrarTabla() {
-      const nombre = document.getElementById("filtroNombre").value.toLowerCase();
-      const sede = document.getElementById("filtroSede").value;
-
-      const filtrados = datosFiltradosPorCorte.filter(d => {
-        const depName = (d.NOMBRE_DEPENDENCIA || "").toLowerCase();
-        const depSede = d.ID_SEDE || "";
-        return depName.includes(nombre) && (sede === "" || depSede === sede);
-      });
-
-      actualizarTablero(filtrados);
     }
   </script>
 </body>
