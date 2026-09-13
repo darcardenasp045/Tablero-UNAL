@@ -360,10 +360,10 @@
         const lev = parseInt(row.SERVIDORES_LEVANTADOS, 10);
         if (!isNaN(lev)) totalLevantados += lev;
 
-        const estadoMesa = (row.ESTADO_MESA || "").toString().toUpperCase();
+        const estadoMesa = (row.ESTADO_MESA || "").toString().toUpperCase().trim();
         if (estadoMesa.includes("APERTURADA")) mesasAperturadas++;
 
-        const unLev = (row.UNIDAD_LEVANTADA || "").toString().toUpperCase();
+        const unLev = (row.UNIDAD_LEVANTADA || "").toString().toUpperCase().trim();
         if (unLev === "SI") unidadesLevantadas++;
       });
 
@@ -382,16 +382,26 @@
       renderGraficoServidoresSede(datos);
     }
 
+    // CONTEO FLEXIBLE Y EXACTO DE MESAS APERTURADAS POR SEDE
     function renderGraficoMesasSede(datos) {
       const sedesMap = {};
+      
       datos.forEach(d => {
+        const estado = (d.ESTADO_MESA || "").toString().toUpperCase().trim();
+        const sede = (d.ID_SEDE || "Sin Sede").toString().trim();
+
+        if (!sedesMap[sede]) {
+          sedesMap[sede] = { total: 0, aperturadas: 0 };
+        }
+        
+        // Sumar como unidad total si es unidad organizacional nominal
         if (d.ES_UNIDAD_ORGANIZACIONAL === "SI") {
-          const sede = d.ID_SEDE || "Sin Sede";
-          if (!sedesMap[sede]) sedesMap[sede] = { total: 0, aperturadas: 0 };
           sedesMap[sede].total++;
-          
-          const estado = (d.ESTADO_MESA || "").toString().toUpperCase();
-          if (estado.includes("APERTURADA")) sedesMap[sede].aperturadas++;
+        }
+        
+        // Contar si el estado contiene la palabra APERTURADA (independiente de mayúsculas/minúsculas)
+        if (estado.includes("APERTURADA")) {
+          sedesMap[sede].aperturadas++;
         }
       });
 
@@ -418,7 +428,7 @@
     function renderGraficoServidoresSede(datos) {
       const sedesMap = {};
       datos.forEach(d => {
-        const sede = d.ID_SEDE || "Sin Sede";
+        const sede = (d.ID_SEDE || "Sin Sede").toString().trim();
         const lev = parseInt(d.SERVIDORES_LEVANTADOS || 0, 10);
         sedesMap[sede] = (sedesMap[sede] || 0) + (isNaN(lev) ? 0 : lev);
       });
