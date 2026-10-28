@@ -80,49 +80,67 @@
       </div>
     </header>
 
-    <!-- TARJETAS KPI -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-      <div class="bg-white p-4 rounded-xl border-t-4 border-unal shadow-sm">
-        <span class="text-xs font-semibold uppercase text-gray-400">Total Unidades Org.</span>
-        <div id="kpiTotalUnidades" class="text-2xl font-black text-gray-900 mt-1">0</div>
-        <span class="text-[10px] text-gray-400">Del Maestro de Dependencias</span>
+    <!-- TARJETAS KPI DESCRIPTIVAS -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      
+      <!-- KPI 1: Avance Mesas de Apertura (Con indicador visual integrado) -->
+      <div class="bg-white p-4 rounded-xl border-t-4 border-unal shadow-sm flex flex-col justify-between">
+        <div>
+          <span class="text-xs font-semibold uppercase text-gray-400">Avance Mesas de Apertura</span>
+          <div class="flex justify-between items-baseline mt-1">
+            <div id="kpiTotalUnidades" class="text-xl font-black text-gray-900">0 / 0</div>
+            <span id="kpiPorcentajeMesas" class="text-xs font-bold text-unal">0.0%</span>
+          </div>
+          <!-- Barra de progreso miniatura para el KPI -->
+          <div class="w-full bg-gray-200 rounded-full h-2 mt-2 overflow-hidden">
+            <div id="barraKpiMesas" class="bg-unal h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+        <span class="text-[10px] text-gray-500 mt-2 block border-t border-gray-100 pt-1">Mesas real / Total requeridas según maestro</span>
       </div>
 
-      <div class="bg-white p-4 rounded-xl border-t-4 border-cyan-600 shadow-sm">
-        <span class="text-xs font-semibold uppercase text-gray-400">Total de Servidores</span>
-        <div class="text-2xl font-black text-cyan-700 mt-1">3.178</div>
-        <span class="text-[10px] text-gray-400">Fuente SARA • Corte: 31/08/2026</span>
+      <!-- KPI 2: Total de Servidores -->
+      <div class="bg-white p-4 rounded-xl border-t-4 border-cyan-600 shadow-sm flex flex-col justify-between">
+        <div>
+          <span class="text-xs font-semibold uppercase text-gray-400">Total de Servidores</span>
+          <div class="text-2xl font-black text-cyan-700 mt-1">3.178</div>
+        </div>
+        <span class="text-[10px] text-gray-500 mt-2 block border-t border-gray-100 pt-1">Población total objetivo (Fuente SARA)</span>
       </div>
       
-      <div class="bg-white p-4 rounded-xl border-t-4 border-emerald-500 shadow-sm">
-        <span class="text-xs font-semibold uppercase text-gray-400">Servidores Levantados</span>
-        <div id="kpiLevantados" class="text-2xl font-black text-emerald-600 mt-1">0</div>
-        <span class="text-[10px] text-gray-400">Avance de Servidores</span>
+      <!-- KPI 3: Servidores Levantados -->
+      <div class="bg-white p-4 rounded-xl border-t-4 border-emerald-500 shadow-sm flex flex-col justify-between">
+        <div>
+          <span class="text-xs font-semibold uppercase text-gray-400">Servidores Levantados</span>
+          <div id="kpiLevantados" class="text-2xl font-black text-emerald-600 mt-1">0</div>
+        </div>
+        <span class="text-[10px] text-gray-500 mt-2 block border-t border-gray-100 pt-1">Acumulado de cargas procesadas</span>
       </div>
 
-      <div class="bg-white p-4 rounded-xl border-t-4 border-blue-600 shadow-sm">
-        <span class="text-xs font-semibold uppercase text-gray-400">% Avance Servidores</span>
-        <div id="kpiPorcentaje" class="text-2xl font-black text-blue-600 mt-1">0.00%</div>
-        <span class="text-[10px] text-gray-400">Meta global: 3,178</span>
+      <!-- KPI 4: Mesas Aperturadas (General) -->
+      <div class="bg-white p-4 rounded-xl border-t-4 border-purple-600 shadow-sm flex flex-col justify-between">
+        <div>
+          <span class="text-xs font-semibold uppercase text-gray-400">Mesas Aperturadas (General)</span>
+          <div id="kpiMesasAperturadas" class="text-2xl font-black text-purple-600 mt-1">0</div>
+        </div>
+        <span class="text-[10px] text-gray-500 mt-2 block border-t border-gray-100 pt-1">Total bruto con estado aperturado</span>
       </div>
 
-      <div class="bg-white p-4 rounded-xl border-t-4 border-purple-600 shadow-sm">
-        <span class="text-xs font-semibold uppercase text-gray-400">Mesas Aperturadas</span>
-        <div id="kpiMesasAperturadas" class="text-2xl font-black text-purple-600 mt-1">0</div>
-        <span class="text-[10px] text-gray-400">Mesas listas</span>
+      <!-- KPI 5: Unidades 100% Finalizadas -->
+      <div class="bg-white p-4 rounded-xl border-t-4 border-amber-500 shadow-sm flex flex-col justify-between">
+        <div>
+          <span class="text-xs font-semibold uppercase text-gray-400">Unidades 100% Finalizadas</span>
+          <div id="kpiUnidadesLev" class="text-2xl font-black text-amber-600 mt-1">0</div>
+        </div>
+        <span class="text-[10px] text-gray-500 mt-2 block border-t border-gray-100 pt-1">Dependencias con entrevistas concluidas</span>
       </div>
 
-      <div class="bg-white p-4 rounded-xl border-t-4 border-amber-500 shadow-sm">
-        <span class="text-xs font-semibold uppercase text-gray-400">UNIDADES CON ENTREVISTAS FINALIZADAS</span>
-        <div id="kpiUnidadesLev" class="text-2xl font-black text-amber-600 mt-1">0</div>
-        <span class="text-[10px] text-gray-400">Unidades con 100% servidores entrevistados</span>
-      </div>
     </section>
 
-    <!-- BARRA DE AVANCE GENERAL -->
+    <!-- BARRA DE AVANCE GENERAL DE SERVIDORES -->
     <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-2">
       <div class="flex justify-between text-xs font-bold text-gray-700">
-        <span class="uppercase tracking-wider text-unal">Porcentaje Consolidado de Levantamiento de Cargas</span>
+        <span class="uppercase tracking-wider text-unal">Porcentaje Consolidado de Levantamiento de Cargas (Servidores)</span>
         <span id="labelBarraAvance">0.00%</span>
       </div>
       <div class="w-full bg-gray-200 rounded-full h-3.5 overflow-hidden">
@@ -135,7 +153,7 @@
       <!-- Gráfico 1: Mesas de Apertura por Sede -->
       <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
         <h3 class="font-bold text-gray-800 text-sm mb-4 flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-unal"></span> Mesas Aperturadas por Sede
+          <span class="w-2 h-2 rounded-full bg-unal"></span> Mesas Aperturadas vs Requeridas por Sede
         </h3>
         <canvas id="chartSedesMesas" class="max-h-60"></canvas>
       </div>
@@ -281,15 +299,19 @@
 
     function hacerCrucedatos() {
       try {
-        const mapaSeguimiento = {};
+        const mapaSeguimientoPorNombre = {};
         datosSeguimiento.forEach(row => {
-          const key = (row["ID_UADMIN"] || "").toString().trim();
-          if (key) mapaSeguimiento[key] = row;
+          const nombreDep = (row["DEPENDENCIA"] || row["NOMBRE DE LA DEPENDENCIA"] || "").toString().trim().toUpperCase();
+          if (nombreDep) {
+            mapaSeguimientoPorNombre[nombreDep] = row;
+          }
         });
 
         datosUnificados = datosMaestro.map(dep => {
           const key = (dep["ID_UADMIN"] || "").toString().trim();
-          const seg = mapaSeguimiento[key] || {};
+          const nombreDepMaestro = (dep["NOMBRE DE LA DEPENDENCIA"] || dep["DEPENDENCIA"] || "").toString().trim().toUpperCase();
+          
+          const seg = mapaSeguimientoPorNombre[nombreDepMaestro] || {};
 
           const totalServ = seg["TOTAL SERVIDORES"] !== undefined ? seg["TOTAL SERVIDORES"] : null;
           const servLev = seg["SERVIDORES CON CARGA LEVANTADA"] !== undefined ? seg["SERVIDORES CON CARGA LEVANTADA"] : null;
@@ -303,8 +325,7 @@
             ID_UADMIN: key,
             ID_SEDE: dep["ID_SEDE"] || dep["ID SEDE"] || "01 - NIVEL NACIONAL",
             NOMBRE_DEPENDENCIA: dep["NOMBRE DE LA DEPENDENCIA"] || dep["DEPENDENCIA"] || "Sin Nombre",
-            ES_UNIDAD_ORGANIZACIONAL: (dep["ES UNIDAD ORGANIZACIONAL?"] || dep["ES UNIDAD ORGANIZACIONAL"] || "").toString().toUpperCase().trim(),
-            
+            MESA_DE_APERTURA: (dep["MESA DE APERTURA"] || "").toString().toUpperCase().trim(),
             ESTADO_MESA: seg["ESTADO DE LAS MESAS DE APERTURA"] || dep["ESTADO DE LAS MESAS DE APERTURA"] || null,
             TOTAL_SERVIDORES: totalServ,
             SERVIDORES_LEVANTADOS: servLev,
@@ -349,64 +370,78 @@
     }
 
     function actualizarKpisYGraficos(datos) {
-      let totalUnidadesUO = 0;
+      let totalMesasRequeridas = 0;   
+      let mesasRealizadasValidas = 0; 
       let totalLevantados = 0;
-      let mesasAperturadas = 0;
+      let mesasAperturadasTotales = 0;
       let unidadesLevantadas = 0;
 
       datos.forEach(row => {
-        if (row.ES_UNIDAD_ORGANIZACIONAL === "SI") totalUnidadesUO++;
+        const requiereMesa = row.MESA_DE_APERTURA === "SI";
+        const estadoMesa = (row.ESTADO_MESA || "").toString().toUpperCase().trim();
+        const estaAperturada = estadoMesa.includes("APERTURADA");
+
+        if (requiereMesa) {
+          totalMesasRequeridas++;
+          if (estaAperturada) {
+            mesasRealizadasValidas++;
+          }
+        }
 
         const lev = parseInt(row.SERVIDORES_LEVANTADOS, 10);
         if (!isNaN(lev)) totalLevantados += lev;
-
-        const estadoMesa = (row.ESTADO_MESA || "").toString().toUpperCase().trim();
-        if (estadoMesa.includes("APERTURADA")) mesasAperturadas++;
+        if (estaAperturada) mesasAperturadasTotales++;
 
         const unLev = (row.UNIDAD_LEVANTADA || "").toString().toUpperCase().trim();
         if (unLev === "SI") unidadesLevantadas++;
       });
 
-      const pctGlobal = ((totalLevantados / META_SERVIDORES) * 100).toFixed(2);
+      // Cálculo del porcentaje para la barrita del KPI de mesas
+      const pctMesas = totalMesasRequeridas > 0 ? ((mesasRealizadasValidas / totalMesasRequeridas) * 100).toFixed(1) : 0;
+      const pctGlobalServidores = ((totalLevantados / META_SERVIDORES) * 100).toFixed(2);
 
-      document.getElementById("kpiTotalUnidades").innerText = totalUnidadesUO;
+      // Actualizar KPI Mesas (con su barra de progreso integrada)
+      document.getElementById("kpiTotalUnidades").innerText = `${mesasRealizadasValidas} / ${totalMesasRequeridas}`;
+      document.getElementById("kpiPorcentajeMesas").innerText = `${pctMesas}%`;
+      document.getElementById("barraKpiMesas").style.width = `${Math.min(pctMesas, 100)}%`;
+
+      // Demás KPIs
       document.getElementById("kpiLevantados").innerText = totalLevantados.toLocaleString();
-      document.getElementById("kpiPorcentaje").innerText = `${pctGlobal}%`;
-      document.getElementById("kpiMesasAperturadas").innerText = mesasAperturadas;
+      document.getElementById("kpiMesasAperturadas").innerText = mesasAperturadasTotales;
       document.getElementById("kpiUnidadesLev").innerText = unidadesLevantadas;
 
-      document.getElementById("labelBarraAvance").innerText = `${pctGlobal}% (${totalLevantados} / ${META_SERVIDORES})`;
-      document.getElementById("barraAvance").style.width = `${Math.min(pctGlobal, 100)}%`;
+      // Barra de avance general de servidores
+      document.getElementById("labelBarraAvance").innerText = `${pctGlobalServidores}% (${totalLevantados} / ${META_SERVIDORES})`;
+      document.getElementById("barraAvance").style.width = `${Math.min(pctGlobalServidores, 100)}%`;
 
       renderGraficoMesasSede(datos);
       renderGraficoServidoresSede(datos);
     }
 
-    // CONTEO FLEXIBLE Y EXACTO DE MESAS APERTURADAS POR SEDE
     function renderGraficoMesasSede(datos) {
       const sedesMap = {};
       
       datos.forEach(d => {
-        const estado = (d.ESTADO_MESA || "").toString().toUpperCase().trim();
         const sede = (d.ID_SEDE || "Sin Sede").toString().trim();
+        const requiereMesa = d.MESA_DE_APERTURA === "SI";
+        const estado = (d.ESTADO_MESA || "").toString().toUpperCase().trim();
+        const estaAperturada = estado.includes("APERTURADA");
 
         if (!sedesMap[sede]) {
-          sedesMap[sede] = { total: 0, aperturadas: 0 };
+          sedesMap[sede] = { totalRequeridas: 0, aperturadas: 0 };
         }
         
-        // Sumar como unidad total si es unidad organizacional nominal
-        if (d.ES_UNIDAD_ORGANIZACIONAL === "SI") {
-          sedesMap[sede].total++;
-        }
-        
-        // Contar si el estado contiene la palabra APERTURADA (independiente de mayúsculas/minúsculas)
-        if (estado.includes("APERTURADA")) {
+        // Contar todas las unidades por sede (independiente si requieren mesa o no, para que la gráfica de barras de sedes no quede vacía)
+        sedesMap[sede].totalRequeridas++;
+
+        // Contar si ya está aperturada
+        if (estaAperturada) {
           sedesMap[sede].aperturadas++;
         }
       });
 
       const labels = Object.keys(sedesMap);
-      const dataTotales = labels.map(l => sedesMap[l].total);
+      const dataTotales = labels.map(l => sedesMap[l].totalRequeridas);
       const dataAperturadas = labels.map(l => sedesMap[l].aperturadas);
 
       const ctx = document.getElementById("chartSedesMesas").getContext("2d");
@@ -418,7 +453,7 @@
           labels: labels,
           datasets: [
             { label: 'Mesas Aperturadas', data: dataAperturadas, backgroundColor: '#006633', borderRadius: 4 },
-            { label: 'Unidades Totales', data: dataTotales, backgroundColor: '#e5e7eb', borderRadius: 4 }
+            { label: 'Total Unidades en Sede', data: dataTotales, backgroundColor: '#e5e7eb', borderRadius: 4 }
           ]
         },
         options: { responsive: true, scales: { y: { beginAtZero: true } } }
