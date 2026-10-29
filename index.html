@@ -80,10 +80,10 @@
       </div>
     </header>
 
-    <!-- TARJETAS KPI DESCRIPTIVAS -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    <!-- TARJETAS KPI (Ajustadas a 4 columnas principales) -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       
-      <!-- KPI 1: Avance Mesas de Apertura (Con indicador visual integrado) -->
+      <!-- KPI 1: Avance Mesas de Apertura -->
       <div class="bg-white p-4 rounded-xl border-t-4 border-unal shadow-sm flex flex-col justify-between">
         <div>
           <span class="text-xs font-semibold uppercase text-gray-400">Avance Mesas de Apertura</span>
@@ -91,12 +91,11 @@
             <div id="kpiTotalUnidades" class="text-xl font-black text-gray-900">0 / 0</div>
             <span id="kpiPorcentajeMesas" class="text-xs font-bold text-unal">0.0%</span>
           </div>
-          <!-- Barra de progreso miniatura para el KPI -->
           <div class="w-full bg-gray-200 rounded-full h-2 mt-2 overflow-hidden">
             <div id="barraKpiMesas" class="bg-unal h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
           </div>
         </div>
-        <span class="text-[10px] text-gray-500 mt-2 block border-t border-gray-100 pt-1">Mesas real / Total requeridas según maestro</span>
+        <span class="text-[10px] text-gray-500 mt-2 block border-t border-gray-100 pt-1">Mesas aperturadas / Total Mesas Identificadas</span>
       </div>
 
       <!-- KPI 2: Total de Servidores -->
@@ -108,25 +107,16 @@
         <span class="text-[10px] text-gray-500 mt-2 block border-t border-gray-100 pt-1">Población total objetivo (Fuente SARA)</span>
       </div>
       
-      <!-- KPI 3: Servidores Levantados -->
+      <!-- KPI 3: Servidores con carga Levantada -->
       <div class="bg-white p-4 rounded-xl border-t-4 border-emerald-500 shadow-sm flex flex-col justify-between">
         <div>
-          <span class="text-xs font-semibold uppercase text-gray-400">Servidores Levantados</span>
+          <span class="text-xs font-semibold uppercase text-gray-400">Servidores con carga Levantada</span>
           <div id="kpiLevantados" class="text-2xl font-black text-emerald-600 mt-1">0</div>
         </div>
         <span class="text-[10px] text-gray-500 mt-2 block border-t border-gray-100 pt-1">Acumulado de cargas procesadas</span>
       </div>
 
-      <!-- KPI 4: Mesas Aperturadas (General) -->
-      <div class="bg-white p-4 rounded-xl border-t-4 border-purple-600 shadow-sm flex flex-col justify-between">
-        <div>
-          <span class="text-xs font-semibold uppercase text-gray-400">Mesas Aperturadas (General)</span>
-          <div id="kpiMesasAperturadas" class="text-2xl font-black text-purple-600 mt-1">0</div>
-        </div>
-        <span class="text-[10px] text-gray-500 mt-2 block border-t border-gray-100 pt-1">Total bruto con estado aperturado</span>
-      </div>
-
-      <!-- KPI 5: Unidades 100% Finalizadas -->
+      <!-- KPI 4: Unidades 100% Finalizadas -->
       <div class="bg-white p-4 rounded-xl border-t-4 border-amber-500 shadow-sm flex flex-col justify-between">
         <div>
           <span class="text-xs font-semibold uppercase text-gray-400">Unidades 100% Finalizadas</span>
@@ -167,18 +157,24 @@
       </div>
     </section>
 
-    <!-- TABLA UNIFICADA CON FILTRADO Y ORDENAMIENTO -->
+    <!-- TABLA UNIFICADA CON FILTRADO OPTIMIZADO -->
     <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden relative">
       <div class="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
           <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wider">Dependencias con Registro de Avance en Hoja</h3>
-          <p class="text-[11px] text-gray-400">Mostrando solo unidades que poseen estado de mesa registrado. Haz clic en un título para ordenar.</p>
+          <p class="text-[11px] text-gray-400">Mostrando solo unidades que poseen estado de mesa registrado. Usa los filtros rápidos.</p>
         </div>
         
+        <!-- FILTROS OPTIMIZADOS -->
         <div class="flex flex-wrap gap-2 w-full md:w-auto no-print">
-          <input type="text" id="filtroNombre" oninput="filtrarYRenderizar()" placeholder="Buscar dependencia..." class="border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-green-700 focus:outline-none w-full md:w-48" />
+          <input type="text" id="filtroNombre" oninput="filtrarYRenderizar()" placeholder="Buscar dependencia..." class="border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-green-700 focus:outline-none w-full md:w-40" />
+          
           <select id="filtroSede" onchange="filtrarYRenderizar()" class="border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-green-700 focus:outline-none">
             <option value="">Todas las Sedes</option>
+          </select>
+
+          <select id="filtroResponsable" onchange="filtrarYRenderizar()" class="border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-green-700 focus:outline-none">
+            <option value="">Todos los Responsables</option>
           </select>
         </div>
       </div>
@@ -194,9 +190,12 @@
         <table class="w-full text-left text-xs border-collapse">
           <thead class="bg-gray-100 text-gray-600 uppercase font-semibold border-b border-gray-200 select-none">
             <tr>
+              <th onclick="ordenarPor('ID_ACTIVIDAD')" class="p-3 cursor-pointer hover:bg-gray-200 transition">ID Act. <span id="sort-ID_ACTIVIDAD">↕</span></th>
               <th onclick="ordenarPor('ID_UADMIN')" class="p-3 cursor-pointer hover:bg-gray-200 transition">ID_UADMIN <span id="sort-ID_UADMIN">↕</span></th>
               <th onclick="ordenarPor('ID_SEDE')" class="p-3 cursor-pointer hover:bg-gray-200 transition">Sede <span id="sort-ID_SEDE">↕</span></th>
-              <th onclick="ordenarPor('NOMBRE_DEPENDENCIA')" class="p-3 cursor-pointer hover:bg-gray-200 transition">Nombre de la Dependencia <span id="sort-NOMBRE_DEPENDENCIA">↕</span></th>
+              <th onclick="ordenarPor('NOMBRE_DEPENDENCIA')" class="p-3 cursor-pointer hover:bg-gray-200 transition">Dependencia <span id="sort-NOMBRE_DEPENDENCIA">↕</span></th>
+              <th onclick="ordenarPor('RESPONSABLE')" class="p-3 cursor-pointer hover:bg-gray-200 transition">Responsable <span id="sort-RESPONSABLE">↕</span></th>
+              <th onclick="ordenarPor('APOYO')" class="p-3 cursor-pointer hover:bg-gray-200 transition">Apoyo <span id="sort-APOYO">↕</span></th>
               <th onclick="ordenarPor('ESTADO_MESA')" class="p-3 text-center cursor-pointer hover:bg-gray-200 transition">Estado Mesa <span id="sort-ESTADO_MESA">↕</span></th>
               <th onclick="ordenarPor('TOTAL_SERVIDORES')" class="p-3 text-center cursor-pointer hover:bg-gray-200 transition">Total Serv. <span id="sort-TOTAL_SERVIDORES">↕</span></th>
               <th onclick="ordenarPor('SERVIDORES_LEVANTADOS')" class="p-3 text-center cursor-pointer hover:bg-gray-200 transition">Levantados <span id="sort-SERVIDORES_LEVANTADOS">↕</span></th>
@@ -262,7 +261,7 @@
 
       const tbody = document.getElementById("tablaCuerpo");
       if (tbody) {
-        tbody.innerHTML = '<tr><td colspan="11" class="text-center p-6 text-gray-400 font-medium">Conectando con Google Sheets... Por favor espere.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="14" class="text-center p-6 text-gray-400 font-medium">Conectando con Google Sheets... Por favor espere.</td></tr>';
       }
 
       Papa.parse(URL_MAESTRO_DEPENDENCIAS, {
@@ -322,9 +321,12 @@
           }
 
           return {
+            ID_ACTIVIDAD: seg["ID_ACTIVIDAD"] || seg["ID ACTIVIDAD"] || "—",
             ID_UADMIN: key,
             ID_SEDE: dep["ID_SEDE"] || dep["ID SEDE"] || "01 - NIVEL NACIONAL",
             NOMBRE_DEPENDENCIA: dep["NOMBRE DE LA DEPENDENCIA"] || dep["DEPENDENCIA"] || "Sin Nombre",
+            RESPONSABLE: seg["RESPONSABLE"] || "Sin Asignar",
+            APOYO: seg["APOYO"] || "—",
             MESA_DE_APERTURA: (dep["MESA DE APERTURA"] || "").toString().toUpperCase().trim(),
             ESTADO_MESA: seg["ESTADO DE LAS MESAS DE APERTURA"] || dep["ESTADO DE LAS MESAS DE APERTURA"] || null,
             TOTAL_SERVIDORES: totalServ,
@@ -338,7 +340,7 @@
           };
         });
 
-        poblarFiltroSedes(datosUnificados);
+        poblarFiltrosDinamicos(datosUnificados);
         actualizarKpisYGraficos(datosUnificados);
         filtrarYRenderizar();
       } catch (e) {
@@ -352,7 +354,7 @@
       mostrarLoader(false);
       const tbody = document.getElementById("tablaCuerpo");
       if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="11" class="text-center p-6 text-amber-600 font-medium">⚠️ ${mensaje} Presione "🔄 Sincronizar Fuentes" para reintentar.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="14" class="text-center p-6 text-amber-600 font-medium">⚠️ ${mensaje} Presione "🔄 Sincronizar Fuentes" para reintentar.</td></tr>`;
       }
     }
 
@@ -373,7 +375,6 @@
       let totalMesasRequeridas = 0;   
       let mesasRealizadasValidas = 0; 
       let totalLevantados = 0;
-      let mesasAperturadasTotales = 0;
       let unidadesLevantadas = 0;
 
       datos.forEach(row => {
@@ -390,24 +391,21 @@
 
         const lev = parseInt(row.SERVIDORES_LEVANTADOS, 10);
         if (!isNaN(lev)) totalLevantados += lev;
-        if (estaAperturada) mesasAperturadasTotales++;
 
         const unLev = (row.UNIDAD_LEVANTADA || "").toString().toUpperCase().trim();
         if (unLev === "SI") unidadesLevantadas++;
       });
 
-      // Cálculo del porcentaje para la barrita del KPI de mesas
       const pctMesas = totalMesasRequeridas > 0 ? ((mesasRealizadasValidas / totalMesasRequeridas) * 100).toFixed(1) : 0;
       const pctGlobalServidores = ((totalLevantados / META_SERVIDORES) * 100).toFixed(2);
 
-      // Actualizar KPI Mesas (con su barra de progreso integrada)
+      // KPI Mesas (Con barra)
       document.getElementById("kpiTotalUnidades").innerText = `${mesasRealizadasValidas} / ${totalMesasRequeridas}`;
       document.getElementById("kpiPorcentajeMesas").innerText = `${pctMesas}%`;
       document.getElementById("barraKpiMesas").style.width = `${Math.min(pctMesas, 100)}%`;
 
       // Demás KPIs
       document.getElementById("kpiLevantados").innerText = totalLevantados.toLocaleString();
-      document.getElementById("kpiMesasAperturadas").innerText = mesasAperturadasTotales;
       document.getElementById("kpiUnidadesLev").innerText = unidadesLevantadas;
 
       // Barra de avance general de servidores
@@ -423,7 +421,6 @@
       
       datos.forEach(d => {
         const sede = (d.ID_SEDE || "Sin Sede").toString().trim();
-        const requiereMesa = d.MESA_DE_APERTURA === "SI";
         const estado = (d.ESTADO_MESA || "").toString().toUpperCase().trim();
         const estaAperturada = estado.includes("APERTURADA");
 
@@ -431,10 +428,7 @@
           sedesMap[sede] = { totalRequeridas: 0, aperturadas: 0 };
         }
         
-        // Contar todas las unidades por sede (independiente si requieren mesa o no, para que la gráfica de barras de sedes no quede vacía)
         sedesMap[sede].totalRequeridas++;
-
-        // Contar si ya está aperturada
         if (estaAperturada) {
           sedesMap[sede].aperturadas++;
         }
@@ -486,20 +480,27 @@
       });
     }
 
-    function poblarFiltroSedes(datos) {
+    function poblarFiltrosDinamicos(datos) {
       const sedes = [...new Set(datos.map(d => d.ID_SEDE).filter(Boolean))].sort();
-      const select = document.getElementById("filtroSede");
-      select.innerHTML = '<option value="">Todas las Sedes</option>';
-      sedes.forEach(s => { select.innerHTML += `<option value="${s}">${s}</option>`; });
+      const selectSede = document.getElementById("filtroSede");
+      selectSede.innerHTML = '<option value="">Todas las Sedes</option>';
+      sedes.forEach(s => { selectSede.innerHTML += `<option value="${s}">${s}</option>`; });
+
+      const responsables = [...new Set(datos.map(d => d.RESPONSABLE).filter(r => r && r !== "Sin Asignar"))].sort();
+      const selectResp = document.getElementById("filtroResponsable");
+      selectResp.innerHTML = '<option value="">Todos los Responsables</option>';
+      responsables.forEach(r => { selectResp.innerHTML += `<option value="${r}">${r}</option>`; });
     }
 
     function filtrarYRenderizar() {
       const nombre = document.getElementById("filtroNombre").value.toLowerCase();
       const sede = document.getElementById("filtroSede").value;
+      const responsable = document.getElementById("filtroResponsable").value;
 
       datosProcesados = datosUnificados.filter(d => {
         const depName = (d.NOMBRE_DEPENDENCIA || "").toLowerCase();
         const depSede = d.ID_SEDE || "";
+        const depResp = d.RESPONSABLE || "";
 
         const tieneEstadoMesa = d.ESTADO_MESA !== null && 
                                 d.ESTADO_MESA !== undefined && 
@@ -508,8 +509,9 @@
 
         const matchNombre = depName.includes(nombre);
         const matchSede = (sede === "" || depSede === sede);
+        const matchResp = (responsable === "" || depResp === responsable);
 
-        return tieneEstadoMesa && matchNombre && matchSede;
+        return tieneEstadoMesa && matchNombre && matchSede && matchResp;
       });
 
       aplicarOrdenamiento();
@@ -545,7 +547,7 @@
     }
 
     function actualizarIconosOrden() {
-      const columnas = ['ID_UADMIN', 'ID_SEDE', 'NOMBRE_DEPENDENCIA', 'ESTADO_MESA', 'TOTAL_SERVIDORES', 'SERVIDORES_LEVANTADOS', 'PCT_AVANCE', 'SOLICITUD_INFO', 'CARACTERIZACION', 'INFORME_PRELIMINAR', 'INFORME_FINAL'];
+      const columnas = ['ID_ACTIVIDAD', 'ID_UADMIN', 'ID_SEDE', 'NOMBRE_DEPENDENCIA', 'RESPONSABLE', 'APOYO', 'ESTADO_MESA', 'TOTAL_SERVIDORES', 'SERVIDORES_LEVANTADOS', 'PCT_AVANCE', 'SOLICITUD_INFO', 'CARACTERIZACION', 'INFORME_PRELIMINAR', 'INFORME_FINAL'];
       columnas.forEach(col => {
         const el = document.getElementById(`sort-${col}`);
         if (el) {
@@ -565,7 +567,7 @@
       tbody.innerHTML = "";
 
       if (datos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" class="text-center p-6 text-gray-400">Sin dependencias activas con registro para el filtro seleccionado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="14" class="text-center p-6 text-gray-400">Sin dependencias activas con registro para el filtro seleccionado.</td></tr>';
         return;
       }
 
@@ -575,9 +577,12 @@
         const tr = document.createElement("tr");
         tr.className = "hover:bg-green-50/50 transition border-b border-gray-100";
         tr.innerHTML = `
+          <td class="p-3 font-mono text-[11px] text-gray-500">${row.ID_ACTIVIDAD || "—"}</td>
           <td class="p-3 font-mono text-[11px] text-gray-500">${row.ID_UADMIN || "—"}</td>
           <td class="p-3 text-gray-600">${row.ID_SEDE || "—"}</td>
           <td class="p-3 font-medium text-gray-900">${row.NOMBRE_DEPENDENCIA}</td>
+          <td class="p-3 text-gray-700 font-medium">${row.RESPONSABLE}</td>
+          <td class="p-3 text-gray-600">${row.APOYO}</td>
           <td class="p-3 text-center">${formatEstado(row.ESTADO_MESA)}</td>
           <td class="p-3 text-center">${formatNumber(row.TOTAL_SERVIDORES)}</td>
           <td class="p-3 text-center">${formatNumber(row.SERVIDORES_LEVANTADOS)}</td>
