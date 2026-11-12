@@ -108,7 +108,7 @@
     <div class="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
       <div>
         <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wider">Dependencias con Registro de Avance</h3>
-        <p class="text-[11px] text-gray-400">Dependencias con mesa de apertura o con registro en la hoja de analistas.</p>
+        <p class="text-[11px] text-gray-400">Solo dependencias de la hoja de seguimiento con mesa Aperturada · Mostrando <strong id="contador" class="text-unal">0</strong> registros.</p>
       </div>
       <div class="flex flex-wrap gap-2 w-full md:w-auto no-print">
         <input type="text" id="filtroNombre" placeholder="Buscar dependencia..." class="border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-green-700 focus:outline-none w-full md:w-40" />
@@ -116,7 +116,7 @@
         <select id="filtroTipo" class="border border-gray-300 rounded-lg p-2 text-xs focus:outline-none">
           <option value="">Todos los Tipos</option><option value="ORG">Unidad organizacional</option><option value="DEP">Dependencia</option>
         </select>
-        <select id="filtroResponsable" class="border border-gray-300 rounded-lg p-2 text-xs focus:outline-none"><option value="">Todos los Responsables</option></select>
+        <select id="filtroResponsable" class="border border-gray-300 rounded-lg p-2 text-xs focus:outline-none"><option value="">Responsable o Apoyo (todos)</option></select>
       </div>
     </div>
     <div class="overflow-x-auto min-h-[300px] relative">
@@ -146,7 +146,7 @@ const URL_SEGUIMIENTO = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQYT9HU
 const COL = {
   id:'ID_UADMIN', sede:'ID_SEDE', nombre:'NOMBRE DE LA DEPENDENCIA', esOrg:'ES UNIDAD ORGANIZACIONAL?',
   mesa:'MESA DE APERTURA', llevaPrel:'LLEVA INFORME PRELIMINAR?', llevaFinal:'LLEVA INFORME FINAL?',   // hoja control
-  actividad:'ID_ACTIVIDAD', total:'TOTAL SERVIDORES', lev:'SERVIDORES CON CARGA LEVANTADA', unidadLev:'UNIDAD LEVANTADA',
+  actividad:'ID_ACTIVIDAD', estadoMesa:'ESTADO DE LAS MESAS DE APERTURA', total:'TOTAL SERVIDORES', lev:'SERVIDORES CON CARGA LEVANTADA', unidadLev:'UNIDAD LEVANTADA',
   solicitud:'SOLICITUD DE INFORMACIÓN / VOLÚMENES DE TRABAJO', caracteriz:'CARACTERIZACIÓN / ANÁLISIS DE CARGAS REALIZADO',
   prel:'INFORME PRELIMINAR / PRESENTACIÓN PARA JEFE', final:'INFORME FINAL', resp:'RESPONSABLE', apoyo:'APOYO' // hoja analistas
 };
@@ -163,7 +163,7 @@ const $ = id => document.getElementById(id);
 
 let filas = [], vista = [], orden = { k:'nombre', asc:true }, chM = null, chS = null;
 
-const COLUMNAS = [['actividad','ID Act.'],['sede','Sede'],['nombre','Dependencia'],['tipo','Tipo'],['resp','Responsable'],['apoyo','Apoyo'],
+const COLUMNAS = [['n','#'],['actividad','ID Act.'],['sede','Sede'],['nombre','Dependencia'],['tipo','Tipo'],['resp','Responsable'],['apoyo','Apoyo'],
   ['total','Total Serv.'],['lev','Levantados'],['pct','% Avance'],['solicitud','Solicitud'],['caracteriz','Caracterización'],['prel','Informe Prel.'],['final','Informe Final']];
 
 // ================= CARGA Y CRUCE (por ID_UADMIN) =================
@@ -183,7 +183,7 @@ async function cargarAmbasFuentes() {
         org: si(g(c,'esOrg')), mesa: hecho(mesa) ? mesa : '', reqPrel: si(g(c,'llevaPrel')), reqFinal: si(g(c,'llevaFinal')),
         resp: String(g(s,'resp')).trim() || 'Sin Asignar', apoyo: g(s,'apoyo') || '—', total, lev,
         pct: total > 0 && lev !== null ? parseFloat((lev/total*100).toFixed(1)) : null,
-        unidadLev: g(s,'unidadLev'), solicitud: g(s,'solicitud'), caracteriz: g(s,'caracteriz'), prel: g(s,'prel'), final: g(s,'final') };
+        estadoMesa: String(g(s,'estadoMesa')).trim(), unidadLev: g(s,'unidadLev'), solicitud: g(s,'solicitud'), caracteriz: g(s,'caracteriz'), prel: g(s,'prel'), final: g(s,'final') };
     });
     poblarFiltros(); kpisYGraficos(); filtrar();
   } catch (e) {
@@ -227,14 +227,18 @@ function kpisYGraficos() {
 }
 
 // ================= FILTROS, ORDEN Y TABLA =================
+// Solo estados "Aperturada" (excluye "No aperturada", "Programada", etc.)
+const aperturada = v => { const n = norm(v); return n.includes('APERTURADA') && !n.startsWith('NO'); };
+// Nombres de la fila: responsable + apoyo (el apoyo puede traer varios nombres separados por , ; / o salto de línea)
+const personas = r => [r.resp, ...String(r.apoyo).split(/[,;\/\n]+/)].map(s => s.trim()).filter(s => s && s !== '—' && s !== 'Sin Asignar');
 function poblarFiltros() {
   const llenar = (id, vals) => { const s = $(id), p = s.value; [...s.options].slice(1).forEach(o => o.remove()); vals.forEach(v => s.add(new Option(v, v))); s.value = p; };
   llenar('filtroSede', [...new Set(filas.map(r => r.sede))].sort());
-  llenar('filtroResponsable', [...new Set(filas.map(r => r.resp).filter(r => r !== 'Sin Asignar'))].sort());
+  llenar('filtroResponsable', [...new Set(filas.flatMap(personas))].sort((a, b) => a.localeCompare(b, 'es')));
 }
 function filtrar() {
   const q = norm($('filtroNombre').value), sd = $('filtroSede').value, tp = $('filtroTipo').value, rp = $('filtroResponsable').value;
-  vista = filas.filter(r => (r.mesa || r.act) && norm(r.nombre).includes(q) && (!sd || r.sede === sd) && (!tp || (tp === 'ORG') === r.org) && (!rp || r.resp === rp));
+  vista = filas.filter(r => (r.act && aperturada(r.estadoMesa)) && norm(r.nombre).includes(q) && (!sd || r.sede === sd) && (!tp || (tp === 'ORG') === r.org) && (!rp || personas(r).includes(rp)));
   vista.sort((a,b) => {
     let x = orden.k === 'tipo' ? +a.org : a[orden.k], y = orden.k === 'tipo' ? +b.org : b[orden.k];
     const vacio = v => v === null || v === undefined || v === '' || v === '—';
@@ -242,15 +246,17 @@ function filtrar() {
     const d = (typeof x === 'number' && typeof y === 'number') ? (x === y ? 0 : x < y ? -1 : 1) : String(x).localeCompare(String(y), 'es', { numeric:true });
     return orden.asc ? d : -d;
   });
+  $('contador').textContent = vista.length;
   renderCabecera(); renderTabla();
 }
 function renderCabecera() {
   $('theadRow').innerHTML = COLUMNAS.map(([k,t]) => {
+    if (k === 'n') return `<th class="p-3 text-center text-gray-400">#</th>`;
     const c = ['total','lev','pct','solicitud','caracteriz','prel','final','mesa'].includes(k) ? ' text-center' : '';
     const f = orden.k === k ? (orden.asc ? '▲' : '▼') : '↕';
     return `<th data-k="${k}" class="p-3 cursor-pointer hover:bg-gray-200 transition${c}">${t} <span class="${orden.k === k ? 'text-green-700 font-bold' : 'text-gray-300'}">${f}</span></th>`;
   }).join('');
-  document.querySelectorAll('#theadRow th').forEach(th => th.onclick = () => { const k = th.dataset.k; orden = { k, asc: orden.k === k ? !orden.asc : true }; filtrar(); });
+  document.querySelectorAll('#theadRow th').forEach(th => th.onclick = () => { const k = th.dataset.k; if (!k) return; orden = { k, asc: orden.k === k ? !orden.asc : true }; filtrar(); });
 }
 function marca(v, aplica = true) {
   if (!aplica) return '<span class="text-gray-300 text-[10px]">N/A</span>';
@@ -263,8 +269,9 @@ const numCelda = v => v === null || v === undefined ? '<span class="text-gray-40
 function renderTabla() {
   const tb = $('tablaCuerpo');
   if (!vista.length) { tb.innerHTML = `<tr><td colspan="${COLUMNAS.length}" class="text-center p-6 text-gray-400">Sin dependencias activas con registro para el filtro seleccionado.</td></tr>`; return; }
-  tb.innerHTML = vista.map(r => `
+  tb.innerHTML = vista.map((r, i) => `
     <tr class="hover:bg-green-50/50 transition border-b border-gray-100">
+      <td class="p-3 text-center font-mono text-[11px] text-gray-400">${i + 1}</td>
       <td class="p-3 font-mono text-[11px] text-gray-500">${esc(r.actividad)}</td>
       <td class="p-3 text-gray-600">${esc(r.sede)}</td>
       <td class="p-3 font-medium text-gray-900">${esc(r.nombre)}</td>
@@ -287,4 +294,4 @@ $('btnSincronizar').onclick = cargarAmbasFuentes;
 window.addEventListener('DOMContentLoaded', cargarAmbasFuentes);
 </script>
 </body>
-</html>
+</html>cambios 
