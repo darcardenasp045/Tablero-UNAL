@@ -3,598 +3,288 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
   <title>Tablero de Control - Estudio de Cargas Laborales UNAL</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- PapaParse para procesar enlaces CSV de Google Sheets en tiempo real -->
+  <!-- Versiones fijadas (antes: Tailwind y Chart.js sin versión) -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <!-- Chart.js para gráficos -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style>
-    /* Identidad de Marca Institucional UNAL */
     .bg-unal { background-color: #006633; }
     .text-unal { color: #006633; }
     .border-unal { border-color: #006633; }
-    .hover-bg-unal:hover { background-color: #004d26; }
-
     @media print {
       .no-print { display: none !important; }
       body { background: white; padding: 0; }
       .shadow-sm, .shadow-md { box-shadow: none !important; }
     }
-
-    /* Animación para el Spinner de carga */
-    .spinner {
-      border: 4px solid rgba(0, 102, 51, 0.1);
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      border-left-color: #006633;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+    .spinner { border: 4px solid rgba(0,102,51,.1); width: 48px; height: 48px; border-radius: 50%; border-left-color: #006633; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans p-4 md:p-6">
+<div class="max-w-[1900px] mx-auto space-y-6">
 
-  <div class="max-w-7xl mx-auto space-y-6">
-    
-    <!-- BANNER ENCABEZADO INSTITUCIONAL UNAL -->
-    <header class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div class="bg-unal p-4 text-white flex flex-col md:flex-row justify-between items-center gap-4">
-        <div class="flex items-center gap-3">
-          <div class="bg-white text-unal font-extrabold px-3 py-1.5 rounded-md text-xl tracking-wider shadow">
-            UNAL
-          </div>
-          <div>
-            <h1 class="text-xl md:text-2xl font-bold tracking-tight">UNIVERSIDAD NACIONAL DE COLOMBIA</h1>
-            <p class="text-xs text-green-100 uppercase tracking-widest font-semibold">Tablero de Control • Estudio de Cargas Laborales</p>
-          </div>
-        </div>
-
-        <!-- Botones de Acción -->
-        <div class="flex items-center gap-2 no-print">
-          <button id="btnSincronizar" onclick="cargarAmbasFuentes()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold py-2 px-3.5 rounded-lg border border-emerald-500 transition flex items-center gap-1.5 shadow-sm">
-            <span>🔄 Sincronizar Fuentes</span>
-          </button>
-          <button onclick="window.print()" class="bg-white text-unal hover:bg-gray-100 text-xs font-bold py-2 px-3.5 rounded-lg transition shadow-sm flex items-center gap-1.5">
-            🖨️ Generar Informe / PDF
-          </button>
-        </div>
-      </div>
-
-      <!-- Estado de Fuentes Integradas -->
-      <div class="p-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center text-xs font-medium text-gray-500">
-        <div class="flex items-center gap-4">
-          <span>Fuente Maestro: <strong class="text-gray-700">DEPENDENCIAS</strong></span>
-          <span>•</span>
-          <span>Fuente Operativa: <strong class="text-gray-700">SEGUIMIENTO</strong></span>
-        </div>
+  <!-- ENCABEZADO -->
+  <header class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="bg-unal p-4 text-white flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-white text-unal font-extrabold px-3 py-1.5 rounded-md text-xl tracking-wider shadow">UNAL</div>
         <div>
-          <span>Vista de Tabla: <strong class="text-emerald-600">Solo registros activos</strong></span>
+          <h1 class="text-xl md:text-2xl font-bold tracking-tight">UNIVERSIDAD NACIONAL DE COLOMBIA</h1>
+          <p class="text-xs text-green-100 uppercase tracking-widest font-semibold">Tablero de Control • Estudio de Cargas Laborales</p>
         </div>
       </div>
-    </header>
-
-    <!-- TARJETAS KPI (Ajustadas a 4 columnas principales) -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      
-      <!-- KPI 1: Avance Mesas de Apertura -->
-      <div class="bg-white p-4 rounded-xl border-t-4 border-unal shadow-sm flex flex-col justify-between">
-        <div>
-          <span class="text-xs font-semibold uppercase text-gray-400">Avance Mesas de Apertura</span>
-          <div class="flex justify-between items-baseline mt-1">
-            <div id="kpiTotalUnidades" class="text-xl font-black text-gray-900">0 / 0</div>
-            <span id="kpiPorcentajeMesas" class="text-xs font-bold text-unal">0.0%</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2 mt-2 overflow-hidden">
-            <div id="barraKpiMesas" class="bg-unal h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
-          </div>
-        </div>
-        <span class="text-[10px] text-gray-500 mt-2 block border-t border-gray-100 pt-1">Mesas aperturadas / Total Mesas Identificadas</span>
-      </div>
-
-      <!-- KPI 2: Total de Servidores -->
-      <div class="bg-white p-4 rounded-xl border-t-4 border-cyan-600 shadow-sm flex flex-col justify-between">
-        <div>
-          <span class="text-xs font-semibold uppercase text-gray-400">Total de Servidores</span>
-          <div class="text-2xl font-black text-cyan-700 mt-1">3.260</div>
-        </div>
-        <span class="text-[10px] text-gray-500 mt-2 block border-t border-gray-100 pt-1">Población total objetivo (Fuente SARA) - Corte 30/09/2026</span>
-      </div>
-      
-      <!-- KPI 3: Servidores con carga Levantada -->
-      <div class="bg-white p-4 rounded-xl border-t-4 border-emerald-500 shadow-sm flex flex-col justify-between">
-        <div>
-          <span class="text-xs font-semibold uppercase text-gray-400">Servidores con carga Levantada</span>
-          <div id="kpiLevantados" class="text-2xl font-black text-emerald-600 mt-1">0</div>
-        </div>
-        <span class="text-[10px] text-gray-500 mt-2 block border-t border-gray-100 pt-1">Acumulado de cargas procesadas</span>
-      </div>
-
-      <!-- KPI 4: Unidades 100% Finalizadas -->
-      <div class="bg-white p-4 rounded-xl border-t-4 border-amber-500 shadow-sm flex flex-col justify-between">
-        <div>
-          <span class="text-xs font-semibold uppercase text-gray-400">Unidades 100% Finalizadas</span>
-          <div id="kpiUnidadesLev" class="text-2xl font-black text-amber-600 mt-1">0</div>
-        </div>
-        <span class="text-[10px] text-gray-500 mt-2 block border-t border-gray-100 pt-1">Dependencias con entrevistas concluidas</span>
-      </div>
-
-    </section>
-
-    <!-- BARRA DE AVANCE GENERAL DE SERVIDORES -->
-    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-2">
-      <div class="flex justify-between text-xs font-bold text-gray-700">
-        <span class="uppercase tracking-wider text-unal">Porcentaje Consolidado de Levantamiento de Cargas (Servidores)</span>
-        <span id="labelBarraAvance">0.00%</span>
-      </div>
-      <div class="w-full bg-gray-200 rounded-full h-3.5 overflow-hidden">
-        <div id="barraAvance" class="bg-unal h-3.5 rounded-full transition-all duration-700" style="width: 0%"></div>
+      <div class="flex items-center gap-2 no-print">
+        <button id="btnSincronizar" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold py-2 px-3.5 rounded-lg border border-emerald-500 transition shadow-sm">🔄 Sincronizar Fuentes</button>
+        <button onclick="window.print()" class="bg-white text-unal hover:bg-gray-100 text-xs font-bold py-2 px-3.5 rounded-lg transition shadow-sm">🖨️ Generar Informe / PDF</button>
       </div>
     </div>
-
-    <!-- SECCIÓN DE GRÁFICOS -->
-    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Gráfico 1: Mesas de Apertura por Sede -->
-      <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-        <h3 class="font-bold text-gray-800 text-sm mb-4 flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-unal"></span> Mesas Aperturadas vs Requeridas por Sede
-        </h3>
-        <canvas id="chartSedesMesas" class="max-h-60"></canvas>
+    <div class="p-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center text-xs font-medium text-gray-500">
+      <div class="flex items-center gap-4">
+        <span>Fuente Maestro: <strong class="text-gray-700">CONTROL_CONTRATACION</strong></span><span>•</span>
+        <span>Fuente Operativa: <strong class="text-gray-700">SEGUIMIENTO</strong></span>
       </div>
+      <span>Vista de Tabla: <strong class="text-emerald-600">Solo registros activos</strong></span>
+    </div>
+  </header>
 
-      <!-- Gráfico 2: Servidores Levantados por Sede -->
-      <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-        <h3 class="font-bold text-gray-800 text-sm mb-4 flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-unal"></span> Servidores Levantados por Sede
-        </h3>
-        <canvas id="chartSedesServidores" class="max-h-60"></canvas>
+  <!-- KPIs (mismos 4 de antes; el 1 ahora cuenta mesas realizadas, sin meta) -->
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white p-4 rounded-xl border-t-4 border-unal shadow-sm flex flex-col justify-between">
+      <div>
+        <span class="text-xs font-semibold uppercase text-gray-400">Mesas de Apertura Realizadas</span>
+        <div id="kpiMesas" class="text-2xl font-black text-gray-900 mt-1">0</div>
       </div>
-    </section>
-
-    <!-- TABLA UNIFICADA CON FILTRADO OPTIMIZADO -->
-    <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden relative">
-      <div class="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div>
-          <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wider">Dependencias con Registro de Avance en Hoja</h3>
-          <p class="text-[11px] text-gray-400">Mostrando solo unidades que poseen estado de mesa registrado. Usa los filtros rápidos.</p>
-        </div>
-        
-        <!-- FILTROS OPTIMIZADOS -->
-        <div class="flex flex-wrap gap-2 w-full md:w-auto no-print">
-          <input type="text" id="filtroNombre" oninput="filtrarYRenderizar()" placeholder="Buscar dependencia..." class="border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-green-700 focus:outline-none w-full md:w-40" />
-          
-          <select id="filtroSede" onchange="filtrarYRenderizar()" class="border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-green-700 focus:outline-none">
-            <option value="">Todas las Sedes</option>
-          </select>
-
-          <select id="filtroResponsable" onchange="filtrarYRenderizar()" class="border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-green-700 focus:outline-none">
-            <option value="">Todos los Responsables</option>
-          </select>
-        </div>
+    </div>
+    <div class="bg-white p-4 rounded-xl border-t-4 border-cyan-600 shadow-sm flex flex-col justify-between">
+      <div>
+        <span class="text-xs font-semibold uppercase text-gray-400">Total de Servidores</span>
+        <div id="kpiTotalServ" class="text-2xl font-black text-cyan-700 mt-1">0</div>
       </div>
-
-      <div class="overflow-x-auto min-h-[300px] relative">
-        
-        <!-- COMPONENTE OVERLAY LOADER -->
-        <div id="loaderOverlay" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center gap-3">
-          <div class="spinner"></div>
-          <p class="text-xs font-bold text-unal animate-pulse">Cargando y procesando información desde Google Sheets...</p>
-        </div>
-
-        <table class="w-full text-left text-xs border-collapse">
-          <thead class="bg-gray-100 text-gray-600 uppercase font-semibold border-b border-gray-200 select-none">
-            <tr>
-              <th onclick="ordenarPor('ID_ACTIVIDAD')" class="p-3 cursor-pointer hover:bg-gray-200 transition">ID Act. <span id="sort-ID_ACTIVIDAD">↕</span></th>
-              <th onclick="ordenarPor('ID_UADMIN')" class="p-3 cursor-pointer hover:bg-gray-200 transition">ID_UADMIN <span id="sort-ID_UADMIN">↕</span></th>
-              <th onclick="ordenarPor('ID_SEDE')" class="p-3 cursor-pointer hover:bg-gray-200 transition">Sede <span id="sort-ID_SEDE">↕</span></th>
-              <th onclick="ordenarPor('NOMBRE_DEPENDENCIA')" class="p-3 cursor-pointer hover:bg-gray-200 transition">Dependencia <span id="sort-NOMBRE_DEPENDENCIA">↕</span></th>
-              <th onclick="ordenarPor('RESPONSABLE')" class="p-3 cursor-pointer hover:bg-gray-200 transition">Responsable <span id="sort-RESPONSABLE">↕</span></th>
-              <th onclick="ordenarPor('APOYO')" class="p-3 cursor-pointer hover:bg-gray-200 transition">Apoyo <span id="sort-APOYO">↕</span></th>
-              <th onclick="ordenarPor('ESTADO_MESA')" class="p-3 text-center cursor-pointer hover:bg-gray-200 transition">Estado Mesa <span id="sort-ESTADO_MESA">↕</span></th>
-              <th onclick="ordenarPor('TOTAL_SERVIDORES')" class="p-3 text-center cursor-pointer hover:bg-gray-200 transition">Total Serv. <span id="sort-TOTAL_SERVIDORES">↕</span></th>
-              <th onclick="ordenarPor('SERVIDORES_LEVANTADOS')" class="p-3 text-center cursor-pointer hover:bg-gray-200 transition">Levantados <span id="sort-SERVIDORES_LEVANTADOS">↕</span></th>
-              <th onclick="ordenarPor('PCT_AVANCE')" class="p-3 text-center cursor-pointer hover:bg-gray-200 transition">% Avance <span id="sort-PCT_AVANCE">↕</span></th>
-              <th onclick="ordenarPor('SOLICITUD_INFO')" class="p-3 text-center cursor-pointer hover:bg-gray-200 transition">Solicitud <span id="sort-SOLICITUD_INFO">↕</span></th>
-              <th onclick="ordenarPor('CARACTERIZACION')" class="p-3 text-center cursor-pointer hover:bg-gray-200 transition">Caracterización <span id="sort-CARACTERIZACION">↕</span></th>
-              <th onclick="ordenarPor('INFORME_PRELIMINAR')" class="p-3 text-center cursor-pointer hover:bg-gray-200 transition">Informe Prel. <span id="sort-INFORME_PRELIMINAR">↕</span></th>
-              <th onclick="ordenarPor('INFORME_FINAL')" class="p-3 text-center cursor-pointer hover:bg-gray-200 transition">Informe Final <span id="sort-INFORME_FINAL">↕</span></th>
-            </tr>
-          </thead>
-          <tbody id="tablaCuerpo" class="divide-y divide-gray-100">
-            <!-- Filas dinámicas -->
-          </tbody>
-        </table>
+      <span class="text-[10px] text-gray-500 mt-2 block border-t border-gray-100 pt-1">Población total objetivo (Fuente SARA) - Corte 30/09/2026</span>
+    </div>
+    <div class="bg-white p-4 rounded-xl border-t-4 border-emerald-500 shadow-sm flex flex-col justify-between">
+      <div>
+        <span class="text-xs font-semibold uppercase text-gray-400">Servidores con carga Levantada</span>
+        <div id="kpiLevantados" class="text-2xl font-black text-emerald-600 mt-1">0</div>
       </div>
-    </section>
+      <span class="text-[10px] text-gray-500 mt-2 block border-t border-gray-100 pt-1">Acumulado de cargas procesadas</span>
+    </div>
+    <div class="bg-white p-4 rounded-xl border-t-4 border-amber-500 shadow-sm flex flex-col justify-between">
+      <div>
+        <span class="text-xs font-semibold uppercase text-gray-400">Unidades 100% Finalizadas</span>
+        <div id="kpiUnidadesLev" class="text-2xl font-black text-amber-600 mt-1">0</div>
+      </div>
+      <span class="text-[10px] text-gray-500 mt-2 block border-t border-gray-100 pt-1">Dependencias con entrevistas concluidas</span>
+    </div>
+  </section>
 
-    <!-- PIE DE PÁGINA INSTITUCIONAL -->
-    <footer class="text-center text-xs text-gray-400 py-4 border-t border-gray-200">
-      Universidad Nacional de Colombia • Dirección Nacional de Personal Académico y Administrativo (DNPAA) • Elaborado por: Daniel Cardenas - Contratista
-    </footer>
-
+  <!-- BARRA DE AVANCE -->
+  <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-2">
+    <div class="flex justify-between text-xs font-bold text-gray-700">
+      <span class="uppercase tracking-wider text-unal">Porcentaje Consolidado de Levantamiento de Cargas (Servidores)</span>
+      <span id="labelBarraAvance">0.00%</span>
+    </div>
+    <div class="w-full bg-gray-200 rounded-full h-3.5 overflow-hidden">
+      <div id="barraAvance" class="bg-unal h-3.5 rounded-full transition-all duration-700" style="width:0%"></div>
+    </div>
   </div>
 
-  <script>
-    const META_SERVIDORES = 3260; // Total de servidores según corte SARA 30/09/2026
-    
-    const URL_MAESTRO_DEPENDENCIAS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTfZLZW0YYGXcClSIkOZfTF40T_HBmN_7aIW5A8_JGVBu9q4hEivXuJq3Q2OXOsl6udC0oQGQgTk5DE/pub?gid=52723933&single=true&output=csv';
-    const URL_SEGUIMIENTO_ANALISTAS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQYT9HUSG3fUIq3HmgJqRqlPvgSFlyEVdzAzxliMM0ihN4ceDJaruJz-Cs54cbERw/pub?gid=1558092341&single=true&output=csv';
+  <!-- GRÁFICOS -->
+  <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+      <h3 class="font-bold text-gray-800 text-sm mb-4 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-unal"></span> Mesas de Apertura Realizadas por Sede</h3>
+      <div class="relative h-96"><canvas id="chartSedesMesas"></canvas></div>
+    </div>
+    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+      <h3 class="font-bold text-gray-800 text-sm mb-4 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-unal"></span> Servidores Levantados por Sede</h3>
+      <div class="relative h-96"><canvas id="chartSedesServidores"></canvas></div>
+    </div>
+  </section>
 
-    let datosMaestro = [];
-    let datosSeguimiento = [];
-    let datosUnificados = [];
-    let datosProcesados = [];
+  <!-- TABLA -->
+  <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden relative">
+    <div class="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div>
+        <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wider">Dependencias con Registro de Avance</h3>
+        <p class="text-[11px] text-gray-400">Dependencias con mesa de apertura o con registro en la hoja de analistas.</p>
+      </div>
+      <div class="flex flex-wrap gap-2 w-full md:w-auto no-print">
+        <input type="text" id="filtroNombre" placeholder="Buscar dependencia..." class="border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-green-700 focus:outline-none w-full md:w-40" />
+        <select id="filtroSede" class="border border-gray-300 rounded-lg p-2 text-xs focus:outline-none"><option value="">Todas las Sedes</option></select>
+        <select id="filtroTipo" class="border border-gray-300 rounded-lg p-2 text-xs focus:outline-none">
+          <option value="">Todos los Tipos</option><option value="ORG">Unidad organizacional</option><option value="DEP">Dependencia</option>
+        </select>
+        <select id="filtroResponsable" class="border border-gray-300 rounded-lg p-2 text-xs focus:outline-none"><option value="">Todos los Responsables</option></select>
+      </div>
+    </div>
+    <div class="overflow-x-auto min-h-[300px] relative">
+      <div id="loaderOverlay" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center gap-3">
+        <div class="spinner"></div>
+        <p class="text-xs font-bold text-unal animate-pulse">Cargando y procesando información desde Google Sheets...</p>
+      </div>
+      <table class="w-full text-left text-xs border-collapse">
+        <thead class="bg-gray-100 text-gray-600 uppercase font-semibold border-b border-gray-200 select-none"><tr id="theadRow"></tr></thead>
+        <tbody id="tablaCuerpo" class="divide-y divide-gray-100"></tbody>
+      </table>
+    </div>
+  </section>
 
-    let columnaOrden = 'NOMBRE_DEPENDENCIA';
-    let ordenAscendente = true;
+  <footer class="text-center text-xs text-gray-400 py-4 border-t border-gray-200">
+    Universidad Nacional de Colombia • Dirección Nacional de Personal Académico y Administrativo (DNPAA) • Elaborado por: Daniel Cardenas - Contratista
+  </footer>
+</div>
 
-    let chartSedesMesasObj = null;
-    let chartSedesServidoresObj = null;
+<script>
+'use strict';
+// ================= CONFIGURACIÓN =================
+const META_SERVIDORES = 3260; // Corte SARA 30/09/2026
+const URL_CONTROL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTfZLZW0YYGXcClSIkOZfTF40T_HBmN_7aIW5A8_JGVBu9q4hEivXuJq3Q2OXOsl6udC0oQGQgTk5DE/pub?gid=52723933&single=true&output=csv';
+const URL_SEGUIMIENTO = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQYT9HUSG3fUIq3HmgJqRqlPvgSFlyEVdzAzxliMM0ihN4ceDJaruJz-Cs54cbERw/pub?gid=1558092341&single=true&output=csv';
+// Nombres de columna (no importan tildes ni mayúsculas)
+const COL = {
+  id:'ID_UADMIN', sede:'ID_SEDE', nombre:'NOMBRE DE LA DEPENDENCIA', esOrg:'ES UNIDAD ORGANIZACIONAL?',
+  mesa:'MESA DE APERTURA', llevaPrel:'LLEVA INFORME PRELIMINAR?', llevaFinal:'LLEVA INFORME FINAL?',   // hoja control
+  actividad:'ID_ACTIVIDAD', total:'TOTAL SERVIDORES', lev:'SERVIDORES CON CARGA LEVANTADA', unidadLev:'UNIDAD LEVANTADA',
+  solicitud:'SOLICITUD DE INFORMACIÓN / VOLÚMENES DE TRABAJO', caracteriz:'CARACTERIZACIÓN / ANÁLISIS DE CARGAS REALIZADO',
+  prel:'INFORME PRELIMINAR / PRESENTACIÓN PARA JEFE', final:'INFORME FINAL', resp:'RESPONSABLE', apoyo:'APOYO' // hoja analistas
+};
 
-    window.addEventListener('DOMContentLoaded', () => {
-      cargarAmbasFuentes();
+// ================= UTILIDADES =================
+const norm = s => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toUpperCase();
+const K = Object.fromEntries(Object.entries(COL).map(([k,v]) => [k, norm(v)]));
+const g = (r,k) => r ? (r[K[k]] ?? '') : '';
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); // anti-XSS
+const si = v => norm(v) === 'SI';
+const hecho = v => !['','NO','-','—'].includes(norm(v));
+const num = v => { const n = parseInt(String(v ?? '').replace(/\./g,''),10); return isNaN(n) ? null : n; };
+const $ = id => document.getElementById(id);
+
+let filas = [], vista = [], orden = { k:'nombre', asc:true }, chM = null, chS = null;
+
+const COLUMNAS = [['actividad','ID Act.'],['sede','Sede'],['nombre','Dependencia'],['tipo','Tipo'],['resp','Responsable'],['apoyo','Apoyo'],
+  ['total','Total Serv.'],['lev','Levantados'],['pct','% Avance'],['solicitud','Solicitud'],['caracteriz','Caracterización'],['prel','Informe Prel.'],['final','Informe Final']];
+
+// ================= CARGA Y CRUCE (por ID_UADMIN) =================
+const leer = url => new Promise((ok, ko) => Papa.parse(url, { download:true, header:true, skipEmptyLines:true, transformHeader:norm,
+  complete: r => r.data.length ? ok(r.data) : ko(new Error('La hoja llegó vacía')), error: ko }));
+
+async function cargarAmbasFuentes() {
+  mostrarLoader(true);
+  try {
+    const [ctrl, seg] = await Promise.all([leer(URL_CONTROL), leer(URL_SEGUIMIENTO)]);
+    const mapa = new Map();
+    seg.forEach(r => { const id = String(g(r,'id')).trim(); if (id && !mapa.has(id)) mapa.set(id, r); });
+    filas = ctrl.filter(c => String(g(c,'id')).trim()).map(c => {
+      const id = String(g(c,'id')).trim(), s = mapa.get(id) || null, mesa = String(g(c,'mesa')).trim();
+      const total = num(g(s,'total')), lev = num(g(s,'lev'));
+      return { id, act: !!s, actividad: g(s,'actividad') || '—', sede: g(c,'sede') || 'Sin sede', nombre: g(c,'nombre') || 'Sin nombre',
+        org: si(g(c,'esOrg')), mesa: hecho(mesa) ? mesa : '', reqPrel: si(g(c,'llevaPrel')), reqFinal: si(g(c,'llevaFinal')),
+        resp: String(g(s,'resp')).trim() || 'Sin Asignar', apoyo: g(s,'apoyo') || '—', total, lev,
+        pct: total > 0 && lev !== null ? parseFloat((lev/total*100).toFixed(1)) : null,
+        unidadLev: g(s,'unidadLev'), solicitud: g(s,'solicitud'), caracteriz: g(s,'caracteriz'), prel: g(s,'prel'), final: g(s,'final') };
     });
+    poblarFiltros(); kpisYGraficos(); filtrar();
+  } catch (e) {
+    console.error(e);
+    $('tablaCuerpo').innerHTML = `<tr><td colspan="${COLUMNAS.length}" class="text-center p-6 text-amber-600 font-medium">⚠️ No se pudo cargar una de las hojas (${esc(e.message)}). Presione "🔄 Sincronizar Fuentes" para reintentar.</td></tr>`;
+  } finally { mostrarLoader(false); }
+}
+function mostrarLoader(on) {
+  $('loaderOverlay').classList.toggle('hidden', !on);
+  const b = $('btnSincronizar'); b.disabled = on; b.classList.toggle('opacity-60', on); b.classList.toggle('cursor-not-allowed', on);
+}
 
-    function mostrarLoader(activar) {
-      const loader = document.getElementById("loaderOverlay");
-      const btnBtn = document.getElementById("btnSincronizar");
-      
-      if (activar) {
-        loader.classList.remove("hidden");
-        btnBtn.disabled = true;
-        btnBtn.classList.add("opacity-60", "cursor-not-allowed");
-      } else {
-        loader.classList.add("hidden");
-        btnBtn.disabled = false;
-        btnBtn.classList.remove("opacity-60", "cursor-not-allowed");
-      }
-    }
+// ================= KPIs Y GRÁFICOS =================
+function kpisYGraficos() {
+  const mesas = new Set(filas.map(r => r.mesa).filter(Boolean)).size, cubiertas = filas.filter(r => r.mesa).length;
+  const levantados = filas.reduce((t,r) => t + (r.lev || 0), 0), unidades = filas.filter(r => si(r.unidadLev)).length;
+  const pct = (levantados / META_SERVIDORES * 100).toFixed(2);
+  $('kpiMesas').textContent = mesas.toLocaleString('es-CO');
+  $('kpiTotalServ').textContent = META_SERVIDORES.toLocaleString('es-CO');
+  $('kpiLevantados').textContent = levantados.toLocaleString('es-CO');
+  $('kpiUnidadesLev').textContent = unidades;
+  $('labelBarraAvance').textContent = `${pct}% (${levantados} / ${META_SERVIDORES})`;
+  $('barraAvance').style.width = Math.min(pct, 100) + '%';
 
-    function cargarAmbasFuentes() {
-      mostrarLoader(true);
+  const sedes = {};
+  filas.forEach(r => { (sedes[r.sede] ??= []).push(r); });
+  const labels = Object.keys(sedes).sort();
+  chM?.destroy(); chS?.destroy();
+  // Plugin: escribe el valor encima de cada barra
+  const etiquetas = { id:'etiquetas', afterDatasetsDraw(c) {
+    const x = c.ctx; x.save(); x.font = 'bold 12px sans-serif'; x.fillStyle = '#374151'; x.textAlign = 'center';
+    c.data.datasets.forEach((d, i) => c.getDatasetMeta(i).data.forEach((b, j) => { if (d.data[j]) x.fillText(d.data[j], b.x, b.y - 5); }));
+    x.restore(); } };
+  const base = { responsive:true, maintainAspectRatio:false, layout:{ padding:{ top:22 } }, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } };
+  chM = new Chart($('chartSedesMesas'), { type:'bar', plugins:[etiquetas], data:{ labels, datasets:[
+    { label:'Mesas realizadas', data: labels.map(l => new Set(sedes[l].map(r => r.mesa).filter(Boolean)).size), backgroundColor:'#006633', borderRadius:4 } ] },
+    options: base });
+  chS = new Chart($('chartSedesServidores'), { type:'bar', plugins:[etiquetas], data:{ labels, datasets:[
+    { label:'Servidores Levantados', data: labels.map(l => sedes[l].reduce((t,r) => t + (r.lev || 0), 0)), backgroundColor:'#2563eb', borderRadius:4 } ] },
+    options: base });
+}
 
-      const tbody = document.getElementById("tablaCuerpo");
-      if (tbody) {
-        tbody.innerHTML = '<tr><td colspan="14" class="text-center p-6 text-gray-400 font-medium">Conectando con Google Sheets... Por favor espere.</td></tr>';
-      }
+// ================= FILTROS, ORDEN Y TABLA =================
+function poblarFiltros() {
+  const llenar = (id, vals) => { const s = $(id), p = s.value; [...s.options].slice(1).forEach(o => o.remove()); vals.forEach(v => s.add(new Option(v, v))); s.value = p; };
+  llenar('filtroSede', [...new Set(filas.map(r => r.sede))].sort());
+  llenar('filtroResponsable', [...new Set(filas.map(r => r.resp).filter(r => r !== 'Sin Asignar'))].sort());
+}
+function filtrar() {
+  const q = norm($('filtroNombre').value), sd = $('filtroSede').value, tp = $('filtroTipo').value, rp = $('filtroResponsable').value;
+  vista = filas.filter(r => (r.mesa || r.act) && norm(r.nombre).includes(q) && (!sd || r.sede === sd) && (!tp || (tp === 'ORG') === r.org) && (!rp || r.resp === rp));
+  vista.sort((a,b) => {
+    let x = orden.k === 'tipo' ? +a.org : a[orden.k], y = orden.k === 'tipo' ? +b.org : b[orden.k];
+    const vacio = v => v === null || v === undefined || v === '' || v === '—';
+    if (vacio(x)) x = orden.asc ? Infinity : -Infinity; if (vacio(y)) y = orden.asc ? Infinity : -Infinity;
+    const d = (typeof x === 'number' && typeof y === 'number') ? (x === y ? 0 : x < y ? -1 : 1) : String(x).localeCompare(String(y), 'es', { numeric:true });
+    return orden.asc ? d : -d;
+  });
+  renderCabecera(); renderTabla();
+}
+function renderCabecera() {
+  $('theadRow').innerHTML = COLUMNAS.map(([k,t]) => {
+    const c = ['total','lev','pct','solicitud','caracteriz','prel','final','mesa'].includes(k) ? ' text-center' : '';
+    const f = orden.k === k ? (orden.asc ? '▲' : '▼') : '↕';
+    return `<th data-k="${k}" class="p-3 cursor-pointer hover:bg-gray-200 transition${c}">${t} <span class="${orden.k === k ? 'text-green-700 font-bold' : 'text-gray-300'}">${f}</span></th>`;
+  }).join('');
+  document.querySelectorAll('#theadRow th').forEach(th => th.onclick = () => { const k = th.dataset.k; orden = { k, asc: orden.k === k ? !orden.asc : true }; filtrar(); });
+}
+function marca(v, aplica = true) {
+  if (!aplica) return '<span class="text-gray-300 text-[10px]">N/A</span>';
+  if (!hecho(v)) return '<span class="text-gray-400 font-bold">—</span>';
+  const n = norm(v);
+  if (n === 'SI' || n === '✓') return '<span class="text-emerald-600 font-bold">✓</span>';
+  return `<span class="text-gray-600 text-[11px] font-medium">${esc(v)}</span>`;
+}
+const numCelda = v => v === null || v === undefined ? '<span class="text-gray-400">—</span>' : v;
+function renderTabla() {
+  const tb = $('tablaCuerpo');
+  if (!vista.length) { tb.innerHTML = `<tr><td colspan="${COLUMNAS.length}" class="text-center p-6 text-gray-400">Sin dependencias activas con registro para el filtro seleccionado.</td></tr>`; return; }
+  tb.innerHTML = vista.map(r => `
+    <tr class="hover:bg-green-50/50 transition border-b border-gray-100">
+      <td class="p-3 font-mono text-[11px] text-gray-500">${esc(r.actividad)}</td>
+      <td class="p-3 text-gray-600">${esc(r.sede)}</td>
+      <td class="p-3 font-medium text-gray-900">${esc(r.nombre)}</td>
+      <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${r.org ? 'bg-green-100 text-green-800' : 'bg-sky-100 text-sky-800'}">${r.org ? 'Unidad org.' : 'Dependencia'}</span></td>
+      <td class="p-3 text-gray-700 font-medium">${esc(r.resp)}</td>
+      <td class="p-3 text-gray-600">${esc(r.apoyo)}</td>
+      <td class="p-3 text-center">${numCelda(r.total)}</td>
+      <td class="p-3 text-center">${numCelda(r.lev)}</td>
+      <td class="p-3 text-center font-bold text-unal">${r.pct !== null ? r.pct + '%' : '—'}</td>
+      <td class="p-3 text-center">${marca(r.solicitud)}</td>
+      <td class="p-3 text-center">${marca(r.caracteriz)}</td>
+      <td class="p-3 text-center">${marca(r.prel, r.reqPrel)}</td>
+      <td class="p-3 text-center">${marca(r.final, r.reqFinal)}</td>
+    </tr>`).join('');
+}
 
-      Papa.parse(URL_MAESTRO_DEPENDENCIAS, {
-        download: true,
-        header: true,
-        dynamicTyping: true,
-        skipEmptyLines: true,
-        complete: function(resMaestro) {
-          if (!resMaestro.data || resMaestro.data.length === 0) return;
-          datosMaestro = resMaestro.data;
-
-          Papa.parse(URL_SEGUIMIENTO_ANALISTAS, {
-            download: true,
-            header: true,
-            dynamicTyping: true,
-            skipEmptyLines: true,
-            complete: function(resSeguimiento) {
-              if (!resSeguimiento.data || resSeguimiento.data.length === 0) return;
-              datosSeguimiento = resSeguimiento.data;
-              hacerCrucedatos();
-            },
-            error: function(err) {
-              console.error("Error al cargar seguimiento:", err);
-              mostrarErrorConexion("Error al descargar la hoja operativa de seguimiento.");
-            }
-          });
-        },
-        error: function(err) {
-          console.error("Error al cargar maestro:", err);
-          mostrarErrorConexion("Error al descargar el maestro de dependencias.");
-        }
-      });
-    }
-
-    function hacerCrucedatos() {
-      try {
-        const mapaSeguimientoPorNombre = {};
-        datosSeguimiento.forEach(row => {
-          const nombreDep = (row["DEPENDENCIA"] || row["NOMBRE DE LA DEPENDENCIA"] || "").toString().trim().toUpperCase();
-          if (nombreDep) {
-            mapaSeguimientoPorNombre[nombreDep] = row;
-          }
-        });
-
-        datosUnificados = datosMaestro.map(dep => {
-          const key = (dep["ID_UADMIN"] || "").toString().trim();
-          const nombreDepMaestro = (dep["NOMBRE DE LA DEPENDENCIA"] || dep["DEPENDENCIA"] || "").toString().trim().toUpperCase();
-          
-          const seg = mapaSeguimientoPorNombre[nombreDepMaestro] || {};
-
-          const totalServ = seg["TOTAL SERVIDORES"] !== undefined ? seg["TOTAL SERVIDORES"] : null;
-          const servLev = seg["SERVIDORES CON CARGA LEVANTADA"] !== undefined ? seg["SERVIDORES CON CARGA LEVANTADA"] : null;
-          
-          let pct = null;
-          if (totalServ !== null && !isNaN(totalServ) && totalServ > 0 && servLev !== null && !isNaN(servLev)) {
-            pct = parseFloat(((servLev / totalServ) * 100).toFixed(1));
-          }
-
-          return {
-            ID_ACTIVIDAD: seg["ID_ACTIVIDAD"] || seg["ID ACTIVIDAD"] || "—",
-            ID_UADMIN: key,
-            ID_SEDE: dep["ID_SEDE"] || dep["ID SEDE"] || "01 - NIVEL NACIONAL",
-            NOMBRE_DEPENDENCIA: dep["NOMBRE DE LA DEPENDENCIA"] || dep["DEPENDENCIA"] || "Sin Nombre",
-            RESPONSABLE: seg["RESPONSABLE"] || "Sin Asignar",
-            APOYO: seg["APOYO"] || "—",
-            MESA_DE_APERTURA: (dep["MESA DE APERTURA"] || "").toString().toUpperCase().trim(),
-            ESTADO_MESA: seg["ESTADO DE LAS MESAS DE APERTURA"] || dep["ESTADO DE LAS MESAS DE APERTURA"] || null,
-            TOTAL_SERVIDORES: totalServ,
-            SERVIDORES_LEVANTADOS: servLev,
-            PCT_AVANCE: pct,
-            UNIDAD_LEVANTADA: seg["UNIDAD LEVANTADA"] || dep["UNIDAD LEVANTADA"] || null,
-            SOLICITUD_INFO: seg["SOLICITUD DE INFORMACIÓN / VOLÚMENES DE TRABAJO"] || seg["SOLICITUD_INFO"] || null,
-            CARACTERIZACION: seg["CARACTERIZACIÓN / ANÁLISIS DE CARGAS REALIZADO"] || seg["CARACTERIZACION"] || null,
-            INFORME_PRELIMINAR: seg["INFORME PRELIMINAR / PRESENTACIÓN PARA JEFE"] || seg["INFORME_PRELIMINAR"] || null,
-            INFORME_FINAL: seg["INFORME FINAL"] || seg["INFORME_FINAL"] || null
-          };
-        });
-
-        poblarFiltrosDinamicos(datosUnificados);
-        actualizarKpisYGraficos(datosUnificados);
-        filtrarYRenderizar();
-      } catch (e) {
-        console.error("Error procesando datos:", e);
-      } finally {
-        mostrarLoader(false);
-      }
-    }
-
-    function mostrarErrorConexion(mensaje) {
-      mostrarLoader(false);
-      const tbody = document.getElementById("tablaCuerpo");
-      if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="14" class="text-center p-6 text-amber-600 font-medium">⚠️ ${mensaje} Presione "🔄 Sincronizar Fuentes" para reintentar.</td></tr>`;
-      }
-    }
-
-    function formatEstado(val) {
-      if (val === null || val === undefined || val.toString().trim() === "" || val === "—") return '<span class="text-gray-400 font-bold">—</span>';
-      const clean = val.toString().toUpperCase().trim();
-      if (clean === "SI" || clean === "✓") return '<span class="text-emerald-600 font-bold">✓</span>';
-      if (clean === "NO" || clean === "✕") return '<span class="text-rose-600 font-bold">✕</span>';
-      return `<span class="text-gray-600 text-[11px] font-medium">${val}</span>`;
-    }
-
-    function formatNumber(val) {
-      if (val === null || val === undefined || val === "" || isNaN(val)) return '<span class="text-gray-400">—</span>';
-      return parseInt(val, 10);
-    }
-
-    function actualizarKpisYGraficos(datos) {
-      let totalMesasRequeridas = 0;   
-      let mesasRealizadasValidas = 0; 
-      let totalLevantados = 0;
-      let unidadesLevantadas = 0;
-
-      datos.forEach(row => {
-        const requiereMesa = row.MESA_DE_APERTURA === "SI";
-        const estadoMesa = (row.ESTADO_MESA || "").toString().toUpperCase().trim();
-        const estaAperturada = estadoMesa.includes("APERTURADA");
-
-        if (requiereMesa) {
-          totalMesasRequeridas++;
-          if (estaAperturada) {
-            mesasRealizadasValidas++;
-          }
-        }
-
-        const lev = parseInt(row.SERVIDORES_LEVANTADOS, 10);
-        if (!isNaN(lev)) totalLevantados += lev;
-
-        const unLev = (row.UNIDAD_LEVANTADA || "").toString().toUpperCase().trim();
-        if (unLev === "SI") unidadesLevantadas++;
-      });
-
-      const pctMesas = totalMesasRequeridas > 0 ? ((mesasRealizadasValidas / totalMesasRequeridas) * 100).toFixed(1) : 0;
-      const pctGlobalServidores = ((totalLevantados / META_SERVIDORES) * 100).toFixed(2);
-
-      // KPI Mesas (Con barra)
-      document.getElementById("kpiTotalUnidades").innerText = `${mesasRealizadasValidas} / ${totalMesasRequeridas}`;
-      document.getElementById("kpiPorcentajeMesas").innerText = `${pctMesas}%`;
-      document.getElementById("barraKpiMesas").style.width = `${Math.min(pctMesas, 100)}%`;
-
-      // Demás KPIs
-      document.getElementById("kpiLevantados").innerText = totalLevantados.toLocaleString();
-      document.getElementById("kpiUnidadesLev").innerText = unidadesLevantadas;
-
-      // Barra de avance general de servidores
-      document.getElementById("labelBarraAvance").innerText = `${pctGlobalServidores}% (${totalLevantados} / ${META_SERVIDORES})`;
-      document.getElementById("barraAvance").style.width = `${Math.min(pctGlobalServidores, 100)}%`;
-
-      renderGraficoMesasSede(datos);
-      renderGraficoServidoresSede(datos);
-    }
-
-    function renderGraficoMesasSede(datos) {
-      const sedesMap = {};
-      
-      datos.forEach(d => {
-        const sede = (d.ID_SEDE || "Sin Sede").toString().trim();
-        const estado = (d.ESTADO_MESA || "").toString().toUpperCase().trim();
-        const estaAperturada = estado.includes("APERTURADA");
-
-        if (!sedesMap[sede]) {
-          sedesMap[sede] = { totalRequeridas: 0, aperturadas: 0 };
-        }
-        
-        sedesMap[sede].totalRequeridas++;
-        if (estaAperturada) {
-          sedesMap[sede].aperturadas++;
-        }
-      });
-
-      const labels = Object.keys(sedesMap);
-      const dataTotales = labels.map(l => sedesMap[l].totalRequeridas);
-      const dataAperturadas = labels.map(l => sedesMap[l].aperturadas);
-
-      const ctx = document.getElementById("chartSedesMesas").getContext("2d");
-      if (chartSedesMesasObj) chartSedesMesasObj.destroy();
-
-      chartSedesMesasObj = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [
-            { label: 'Mesas Aperturadas', data: dataAperturadas, backgroundColor: '#006633', borderRadius: 4 },
-            { label: 'Total Unidades en Sede', data: dataTotales, backgroundColor: '#e5e7eb', borderRadius: 4 }
-          ]
-        },
-        options: { responsive: true, scales: { y: { beginAtZero: true } } }
-      });
-    }
-
-    function renderGraficoServidoresSede(datos) {
-      const sedesMap = {};
-      datos.forEach(d => {
-        const sede = (d.ID_SEDE || "Sin Sede").toString().trim();
-        const lev = parseInt(d.SERVIDORES_LEVANTADOS || 0, 10);
-        sedesMap[sede] = (sedesMap[sede] || 0) + (isNaN(lev) ? 0 : lev);
-      });
-
-      const ctx = document.getElementById("chartSedesServidores").getContext("2d");
-      if (chartSedesServidoresObj) chartSedesServidoresObj.destroy();
-
-      chartSedesServidoresObj = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: Object.keys(sedesMap),
-          datasets: [{
-            label: 'Servidores Levantados',
-            data: Object.values(sedesMap),
-            backgroundColor: '#2563eb',
-            borderRadius: 4
-          }]
-        },
-        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-      });
-    }
-
-    function poblarFiltrosDinamicos(datos) {
-      const sedes = [...new Set(datos.map(d => d.ID_SEDE).filter(Boolean))].sort();
-      const selectSede = document.getElementById("filtroSede");
-      selectSede.innerHTML = '<option value="">Todas las Sedes</option>';
-      sedes.forEach(s => { selectSede.innerHTML += `<option value="${s}">${s}</option>`; });
-
-      const responsables = [...new Set(datos.map(d => d.RESPONSABLE).filter(r => r && r !== "Sin Asignar"))].sort();
-      const selectResp = document.getElementById("filtroResponsable");
-      selectResp.innerHTML = '<option value="">Todos los Responsables</option>';
-      responsables.forEach(r => { selectResp.innerHTML += `<option value="${r}">${r}</option>`; });
-    }
-
-    function filtrarYRenderizar() {
-      const nombre = document.getElementById("filtroNombre").value.toLowerCase();
-      const sede = document.getElementById("filtroSede").value;
-      const responsable = document.getElementById("filtroResponsable").value;
-
-      datosProcesados = datosUnificados.filter(d => {
-        const depName = (d.NOMBRE_DEPENDENCIA || "").toLowerCase();
-        const depSede = d.ID_SEDE || "";
-        const depResp = d.RESPONSABLE || "";
-
-        const tieneEstadoMesa = d.ESTADO_MESA !== null && 
-                                d.ESTADO_MESA !== undefined && 
-                                d.ESTADO_MESA.toString().trim() !== "" && 
-                                d.ESTADO_MESA.toString().trim() !== "—";
-
-        const matchNombre = depName.includes(nombre);
-        const matchSede = (sede === "" || depSede === sede);
-        const matchResp = (responsable === "" || depResp === responsable);
-
-        return tieneEstadoMesa && matchNombre && matchSede && matchResp;
-      });
-
-      aplicarOrdenamiento();
-      renderTabla(datosProcesados);
-    }
-
-    function ordenarPor(columna) {
-      if (columnaOrden === columna) {
-        ordenAscendente = !ordenAscendente;
-      } else {
-        columnaOrden = columna;
-        ordenAscendente = true;
-      }
-      actualizarIconosOrden();
-      filtrarYRenderizar();
-    }
-
-    function aplicarOrdenamiento() {
-      datosProcesados.sort((a, b) => {
-        let valA = a[columnaOrden];
-        let valB = b[columnaOrden];
-
-        if (valA === null || valA === undefined || valA === "—") valA = ordenAscendente ? Infinity : -Infinity;
-        if (valB === null || valB === undefined || valB === "—") valB = ordenAscendente ? Infinity : -Infinity;
-
-        if (typeof valA === 'string') valA = valA.toLowerCase();
-        if (typeof valB === 'string') valB = valB.toLowerCase();
-
-        if (valA < valB) return ordenAscendente ? -1 : 1;
-        if (valA > valB) return ordenAscendente ? 1 : -1;
-        return 0;
-      });
-    }
-
-    function actualizarIconosOrden() {
-      const columnas = ['ID_ACTIVIDAD', 'ID_UADMIN', 'ID_SEDE', 'NOMBRE_DEPENDENCIA', 'RESPONSABLE', 'APOYO', 'ESTADO_MESA', 'TOTAL_SERVIDORES', 'SERVIDORES_LEVANTADOS', 'PCT_AVANCE', 'SOLICITUD_INFO', 'CARACTERIZACION', 'INFORME_PRELIMINAR', 'INFORME_FINAL'];
-      columnas.forEach(col => {
-        const el = document.getElementById(`sort-${col}`);
-        if (el) {
-          if (col === columnaOrden) {
-            el.innerText = ordenAscendente ? '▲' : '▼';
-            el.className = 'text-green-700 font-bold';
-          } else {
-            el.innerText = '↕';
-            el.className = 'text-gray-300';
-          }
-        }
-      });
-    }
-
-    function renderTabla(datos) {
-      const tbody = document.getElementById("tablaCuerpo");
-      tbody.innerHTML = "";
-
-      if (datos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="14" class="text-center p-6 text-gray-400">Sin dependencias activas con registro para el filtro seleccionado.</td></tr>';
-        return;
-      }
-
-      datos.forEach(row => {
-        const pct = row.PCT_AVANCE !== null ? `${row.PCT_AVANCE}%` : "—";
-
-        const tr = document.createElement("tr");
-        tr.className = "hover:bg-green-50/50 transition border-b border-gray-100";
-        tr.innerHTML = `
-          <td class="p-3 font-mono text-[11px] text-gray-500">${row.ID_ACTIVIDAD || "—"}</td>
-          <td class="p-3 font-mono text-[11px] text-gray-500">${row.ID_UADMIN || "—"}</td>
-          <td class="p-3 text-gray-600">${row.ID_SEDE || "—"}</td>
-          <td class="p-3 font-medium text-gray-900">${row.NOMBRE_DEPENDENCIA}</td>
-          <td class="p-3 text-gray-700 font-medium">${row.RESPONSABLE}</td>
-          <td class="p-3 text-gray-600">${row.APOYO}</td>
-          <td class="p-3 text-center">${formatEstado(row.ESTADO_MESA)}</td>
-          <td class="p-3 text-center">${formatNumber(row.TOTAL_SERVIDORES)}</td>
-          <td class="p-3 text-center">${formatNumber(row.SERVIDORES_LEVANTADOS)}</td>
-          <td class="p-3 text-center font-bold text-unal">${pct}</td>
-          <td class="p-3 text-center">${formatEstado(row.SOLICITUD_INFO)}</td>
-          <td class="p-3 text-center">${formatEstado(row.CARACTERIZACION)}</td>
-          <td class="p-3 text-center">${formatEstado(row.INFORME_PRELIMINAR)}</td>
-          <td class="p-3 text-center">${formatEstado(row.INFORME_FINAL)}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-  </script>
+// ================= EVENTOS =================
+$('btnSincronizar').onclick = cargarAmbasFuentes;
+['filtroNombre','filtroSede','filtroTipo','filtroResponsable'].forEach(id => $(id).addEventListener('input', filtrar));
+window.addEventListener('DOMContentLoaded', cargarAmbasFuentes);
+</script>
 </body>
 </html>
