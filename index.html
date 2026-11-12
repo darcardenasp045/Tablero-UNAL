@@ -119,6 +119,7 @@
         <select id="filtroResponsable" class="border border-gray-300 rounded-lg p-2 text-xs focus:outline-none"><option value="">Responsable o Apoyo (todos)</option></select>
       </div>
     </div>
+    <div id="chips" class="px-4 py-3 bg-white border-b border-gray-200 flex flex-wrap items-center gap-2"></div>
     <div class="overflow-x-auto min-h-[300px] relative">
       <div id="loaderOverlay" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center gap-3">
         <div class="spinner"></div>
@@ -146,7 +147,7 @@ const URL_SEGUIMIENTO = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQYT9HU
 const COL = {
   id:'ID_UADMIN', sede:'ID_SEDE', nombre:'NOMBRE DE LA DEPENDENCIA', esOrg:'ES UNIDAD ORGANIZACIONAL?',
   mesa:'MESA DE APERTURA', llevaPrel:'LLEVA INFORME PRELIMINAR?', llevaFinal:'LLEVA INFORME FINAL?',   // hoja control
-  actividad:'ID_ACTIVIDAD', estadoMesa:'ESTADO DE LAS MESAS DE APERTURA', total:'TOTAL SERVIDORES', lev:'SERVIDORES CON CARGA LEVANTADA', unidadLev:'UNIDAD LEVANTADA',
+  actividad:'ID_ACTIVIDAD', estadoMesa:'ESTADO DE LAS MESAS DE APERTURA', entrevista:'ENTREVISTA CON EL JEFE', total:'TOTAL SERVIDORES', lev:'SERVIDORES CON CARGA LEVANTADA', unidadLev:'UNIDAD LEVANTADA',
   solicitud:'SOLICITUD DE INFORMACIÓN / VOLÚMENES DE TRABAJO', caracteriz:'CARACTERIZACIÓN / ANÁLISIS DE CARGAS REALIZADO',
   prel:'INFORME PRELIMINAR / PRESENTACIÓN PARA JEFE', final:'INFORME FINAL', resp:'RESPONSABLE', apoyo:'APOYO' // hoja analistas
 };
@@ -183,7 +184,7 @@ async function cargarAmbasFuentes() {
         org: si(g(c,'esOrg')), mesa: hecho(mesa) ? mesa : '', reqPrel: si(g(c,'llevaPrel')), reqFinal: si(g(c,'llevaFinal')),
         resp: String(g(s,'resp')).trim() || 'Sin Asignar', apoyo: g(s,'apoyo') || '—', total, lev,
         pct: total > 0 && lev !== null ? parseFloat((lev/total*100).toFixed(1)) : null,
-        estadoMesa: String(g(s,'estadoMesa')).trim(), unidadLev: g(s,'unidadLev'), solicitud: g(s,'solicitud'), caracteriz: g(s,'caracteriz'), prel: g(s,'prel'), final: g(s,'final') };
+        estadoMesa: String(g(s,'estadoMesa')).trim(), entrevista: g(s,'entrevista'), unidadLev: g(s,'unidadLev'), solicitud: g(s,'solicitud'), caracteriz: g(s,'caracteriz'), prel: g(s,'prel'), final: g(s,'final') };
     });
     poblarFiltros(); kpisYGraficos(); filtrar();
   } catch (e) {
@@ -227,6 +228,25 @@ function kpisYGraficos() {
 }
 
 // ================= FILTROS, ORDEN Y TABLA =================
+// Etapas contables/filtrables. Si tienen 'req', el conteo es sobre las filas que llevan ese informe.
+const ETAPAS = [
+  { k:'solicitud',  t:'Solicitud de información', ok: r => hecho(r.solicitud) },
+  { k:'caracteriz', t:'Caracterización',          ok: r => hecho(r.caracteriz) },
+  { k:'unidadLev',  t:'Unidad levantada',         ok: r => si(r.unidadLev) },
+  { k:'entrevista', t:'Entrevista con el jefe',   ok: r => hecho(r.entrevista) },
+  { k:'prel',       t:'Informe preliminar',       ok: r => hecho(r.prel),  req: r => r.reqPrel },
+  { k:'final',      t:'Informe final',            ok: r => hecho(r.final), req: r => r.reqFinal }
+];
+const etapasActivas = new Set();
+function renderChips(base) {
+  const html = ETAPAS.map(e => {
+    const den = e.req ? base.filter(e.req).length : base.length;
+    const num = base.filter(r => e.ok(r) && (!e.req || e.req(r))).length;
+    const on = etapasActivas.has(e.k);
+    return `<button type="button" data-k="${e.k}" class="px-3 py-1.5 rounded-full text-xs font-semibold border transition ${on ? 'bg-unal text-white border-unal' : 'bg-gray-50 text-gray-700 border-gray-300 hover:bg-green-50'}">${e.t}: <b>${num}</b> <span class="${on ? 'text-green-100' : 'text-gray-400'}">/ ${den}</span></button>`;
+  }).join('');
+  $('chips').innerHTML = html + (etapasActivas.size ? '<button type="button" data-k="_limpiar" class="text-xs text-rose-600 font-semibold underline ml-1">Limpiar</button>' : '');
+}
 // Solo estados "Aperturada" (excluye "No aperturada", "Programada", etc.)
 const aperturada = v => { const n = norm(v); return n.includes('APERTURADA') && !n.startsWith('NO'); };
 // Nombres de la fila: responsable + apoyo (el apoyo puede traer varios nombres separados por , ; / o salto de línea)
@@ -238,7 +258,8 @@ function poblarFiltros() {
 }
 function filtrar() {
   const q = norm($('filtroNombre').value), sd = $('filtroSede').value, tp = $('filtroTipo').value, rp = $('filtroResponsable').value;
-  vista = filas.filter(r => (r.act && aperturada(r.estadoMesa)) && norm(r.nombre).includes(q) && (!sd || r.sede === sd) && (!tp || (tp === 'ORG') === r.org) && (!rp || personas(r).includes(rp)));
+  const base = filas.filter(r => (r.act && aperturada(r.estadoMesa)) && norm(r.nombre).includes(q) && (!sd || r.sede === sd) && (!tp || (tp === 'ORG') === r.org) && (!rp || personas(r).includes(rp)));
+  vista = base.filter(r => [...etapasActivas].every(k => ETAPAS.find(e => e.k === k).ok(r)));
   vista.sort((a,b) => {
     let x = orden.k === 'tipo' ? +a.org : a[orden.k], y = orden.k === 'tipo' ? +b.org : b[orden.k];
     const vacio = v => v === null || v === undefined || v === '' || v === '—';
@@ -247,7 +268,7 @@ function filtrar() {
     return orden.asc ? d : -d;
   });
   $('contador').textContent = vista.length;
-  renderCabecera(); renderTabla();
+  renderChips(base); renderCabecera(); renderTabla();
 }
 function renderCabecera() {
   $('theadRow').innerHTML = COLUMNAS.map(([k,t]) => {
@@ -291,7 +312,13 @@ function renderTabla() {
 // ================= EVENTOS =================
 $('btnSincronizar').onclick = cargarAmbasFuentes;
 ['filtroNombre','filtroSede','filtroTipo','filtroResponsable'].forEach(id => $(id).addEventListener('input', filtrar));
+$('chips').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const k = b.dataset.k;
+  if (k === '_limpiar') etapasActivas.clear(); else if (etapasActivas.has(k)) etapasActivas.delete(k); else etapasActivas.add(k);
+  filtrar();
+});
 window.addEventListener('DOMContentLoaded', cargarAmbasFuentes);
 </script>
 </body>
-</html>cambios 
+</html>
